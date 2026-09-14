@@ -40,6 +40,15 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IPolicyRetriever, Search.AzureAiSearchPolicyRetriever>();
         services.AddScoped<Search.PolicyIndexer>();
 
+        // Register Slice 5 Synthetic Verification Services
+        services.AddSingleton<IIdentityReader, Verification.SyntheticIdentityService>();
+        services.AddSingleton<IIncomeReader, Verification.SyntheticIncomeService>();
+        services.AddSingleton<ICreditReader, Verification.SyntheticCreditService>();
+
+        // Register Slice 5 Command Handlers & MCP Server
+        services.AddScoped<Application.Recommendations.SaveRecommendationDraftCommandHandler>();
+        services.AddScoped<MCP.McpToolServer>();
+
         return services;
     }
 

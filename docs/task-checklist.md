@@ -40,9 +40,14 @@
 - [x] Implement `DocumentStorageTests`, `DocumentExtractionTests`, `DocumentAuthorizationTests`, and `DocumentPersistenceIntegrationTests`.
 - [x] Verify full solution test suite passing (44/44 tests passing).
 
-### Slice 5: Typed Verification Tools & MCP
-- [ ] Build typed `IIdentityReader`, `IIncomeReader`, `ICreditReader` synthetic datasets.
-- [ ] Implement tool execution runner & MCP server transport.
+### Slice 5: Typed Verification Tools & MCP Server
+- [x] Implement typed synthetic readers (`IIdentityReader`, `IIncomeReader`, `ICreditReader`) with 12 synthetic application records and explicit unverified status handling (`SyntheticVerificationServices.cs`).
+- [x] Implement `SaveRecommendationDraftCommand` enforcing `Draft` status creation (`DraftPreparedBySystem`), role authorization (`SystemWorker`, `Officer`), audit logging, and prohibiting final Approve/Reject decisions.
+- [x] Implement `McpToolServer` with JSON-RPC 2.0 dispatch, standard MCP protocol (`2024-11-05`), JSON schema definitions for 5 tools, and server-side `ApplicationId` + `SyntheticId` scoping security.
+- [x] Implement `McpController` providing remote Streamable HTTP endpoint (`POST /api/mcp`) reading actor headers (`X-Actor-Id`, `X-Actor-Role`).
+- [x] Register Slice 5 verification readers, draft handler, and MCP server in `DependencyInjection.cs`.
+- [x] Add `SyntheticVerificationServicesTests`, `McpApplicationScopingTests`, `McpSaveDraftTests`, and update `McpContractTests`.
+- [x] Verify full solution test suite passing (53/53 tests passing across all projects).
 
 ### Slice 6: Deterministic DTI & Eligibility Domain Rules
 - [ ] Expand eligibility calculator tests & domain rules.

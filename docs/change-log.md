@@ -2,6 +2,18 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 5 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Typed Synthetic Verification Readers & MCP Server**:
+  - Implemented typed synthetic readers (`IIdentityReader`, `IIncomeReader`, `ICreditReader`) in `SyntheticVerificationServices.cs` covering 12 synthetic application records with explicit unverified status handling and `CancellationToken` support.
+  - Implemented `SaveRecommendationDraftCommand` and handler in `SaveRecommendationDraftCommand.cs` enforcing `Draft` status creation (`DraftPreparedBySystem`), authorized actor role check (`SystemWorker`, `Officer`), audit trail recording, and prohibiting final `Approve` or `Reject` decisions.
+  - Implemented `McpToolServer` in `src/Loan.Infrastructure/MCP/McpToolServer.cs` with JSON-RPC 2.0 dispatch, Model Context Protocol spec `2024-11-05` compliance, and 5 application-scoped tools: `get_identity_status`, `get_income_verification`, `get_credit_score`, `search_policy`, and `save_draft`.
+  - Enforced server-side `ApplicationId` + `SyntheticId` scoping security; cross-application synthetic identity requests are denied server-side with distinct `CrossApplicationMismatch` error responses.
+  - Implemented remote Streamable HTTP endpoint `McpController` (`POST /api/mcp`) reading actor context headers (`X-Actor-Id`, `X-Actor-Role`).
+  - Added comprehensive test suites: `SyntheticVerificationServicesTests`, `McpApplicationScopingTests`, `McpSaveDraftTests`, and updated `McpContractTests`.
+- Total tests passing: **53/53 tests passing** across all test projects.
+
 ## [Slice 4 Release Gate Passed] - 2026-09-14
 
 ### Added & Verified

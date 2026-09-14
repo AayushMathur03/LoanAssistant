@@ -67,9 +67,13 @@ Record of key architectural, technical, and implementation decisions for the pro
 
 ---
 
-## ADR-008: Secure Upload Validation, Sensitive Identifier Masking, and Role Authorization
+## ADR-009: JSON-RPC 2.0 Model Context Protocol (MCP) & Safe Recommendation Draft Pipeline
 - **Date**: 2026-09-14
 - **Status**: Accepted
-- **Context**: Document upload and candidate field extraction require defense-in-depth against malicious file uploads, sensitive data leaks, unauthorized field overrides, and cross-application data tampering.
-- **Decision**: Implemented `DocumentUploadValidator` enforcing extension whitelisting, MIME type checks, 10MB size limits, and path traversal rejection (`..`). Implemented sensitive identifier masking (`ExtractedFieldRecord.MaskSensitiveValue` formatting SSNs as `***-**-6789`). Enforced role-based authorization in `ConfirmOrOverrideExtractedFieldsCommand` (Applicant can confirm their own facts, Officer can override, Compliance read-only rejected) and strict application ID isolation.
-- **Consequences**: Protects against file upload vulnerabilities, prevents sensitive PII logging, and maintains auditability via `FieldOverrideAuditEntry`.
+- **Context**: Slice 5 requires interoperability with standard Model Context Protocol (MCP) clients, application-scoped verification tools (`get_identity_status`, `get_income_verification`, `get_credit_score`, `search_policy`), server-side application scoping security, and safe recommendation draft generation (`save_draft`).
+- **Decision**: 
+  - Implemented `McpToolServer` following JSON-RPC 2.0 protocol and Model Context Protocol spec `2024-11-05` over Streamable HTTP (`POST /api/mcp`).
+  - Registered 5 application-scoped tools: `get_identity_status`, `get_income_verification`, `get_credit_score`, `search_policy`, and `save_draft`.
+  - Implemented server-side application scoping validation: `applicationId` and `syntheticId` must match the bound `LoanApplication.Facts.SyntheticId`. Mismatches return explicit `CrossApplicationMismatch` errors (`IsError = true`), preventing cross-application data leaks.
+  - Enforced `save_draft` safety: `routingState` accepts ONLY review states (`PendingInformation`, `ManualReview`, `ReadyForOfficerReview`). Final decisions (`Approve`, `Reject`) are rejected with `InvalidArguments` errors, maintaining loan officer exclusivity for final status changes (**BR-07**).
+- **Consequences**: Provides standard MCP protocol interoperability for external agent tool orchestration while guaranteeing application security boundaries and preventing AI agents from making unauthorized approval/rejection decisions.

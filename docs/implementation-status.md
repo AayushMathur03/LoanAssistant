@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 4 - Synthetic Document Upload & Extraction Pipeline (COMPLETED & VERIFIED)
+- **Current Phase**: Slice 5 - Typed Verification Tools & MCP Server (COMPLETED & VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (44 Tests: 11 Domain, 11 Application, 3 Contract, 11 Integration, 4 Prompt, 4 E2E)
-- **Live AI & RAG Status**: Real Azure OpenAI (`gpt-4o`, `text-embedding-3-small`) and Azure AI Search (`loan-policies-index`) live and verified with 8 synthetic versioned policy markdown documents (24 chunks).
+- **Test Status**: 100% Passing (53 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
+- **MCP Transport Status**: JSON-RPC 2.0 Streamable HTTP Endpoint (`POST /api/mcp`) supporting standard MCP spec (`2024-11-05`) with 5 application-scoped tools and safe recommendation draft generation.
 
 ---
 
@@ -21,8 +21,8 @@
 | **Slice 2** | **Azure OpenAI Chat Endpoint** | 🟢 Complete & Verified | `AzureOpenAIChatModel` adapter (`Azure.AI.OpenAI` v2.1.0), `IChatModel` DI registration, User Secrets configuration (`gpt-4o`), live integration test passed. |
 | **Slice 3** | **Azure AI Search RAG & Policy Docs** | 🟢 Complete & Verified | Installed `Azure.Search.Documents` v11.6.0. 8 synthetic versioned policy docs created in `SeedPolicies/`. Built `PolicyIndexer` and `AzureAiSearchPolicyRetriever` for 1536-dim hybrid vector search (`text-embedding-3-small`). Live indexing & search tested. |
 | **Slice 4** | **Synthetic Document Processing** | 🟢 Complete & Verified | `IDocumentStorageService` stream storage (`App_Data/Uploads`), `DocumentUploadValidator` security suite, `SyntheticDocumentExtractor` (5 document categories, SSN masking, $<0.85$ low confidence), role-based confirmation/override, safe field audit logs. |
-| **Slice 5** | **Typed Verification Tools & MCP** | ⏳ Next | Real tool execution & MCP transport. |
-| **Slice 6** | **Deterministic DTI & Eligibility** | ⏳ Planned | Domain calculation test suite & synthetic verification data. |
+| **Slice 5** | **Typed Verification Tools & MCP** | 🟢 Complete & Verified | 3 typed verification readers (`IIdentityReader`, `IIncomeReader`, `ICreditReader`), 12 synthetic records with unverified handling, server-side `ApplicationId` + `SyntheticId` scoping security, safe `save_draft` tool (disallows Approve/Reject), JSON-RPC 2.0 Streamable HTTP server (`POST /api/mcp`). |
+| **Slice 6** | **Deterministic DTI & Eligibility** | ⏳ Next | Domain calculation test suite & synthetic verification data. |
 | **Slice 7** | **Bounded Multi-Agent Orchestration** | ⏳ Planned | Document, Eligibility, and Compliance agent boundaries. |
 | **Slice 8** | **Officer Review & Audit Trail** | ⏳ Planned | Controlled officer approval path & audit trail. |
 | **Slice 9** | **Security & Prompt Refusal** | ⏳ Planned | Data masking & prompt injection refusal suite. |

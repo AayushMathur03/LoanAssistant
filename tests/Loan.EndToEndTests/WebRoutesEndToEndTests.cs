@@ -26,6 +26,7 @@ public class WebRoutesEndToEndTests
     private EvaluateEligibilityCommandHandler _evalHandler = null!;
     private GenerateRecommendationDraftCommandHandler _draftHandler = null!;
     private OfficerDecisionCommandHandler _decisionHandler = null!;
+    private SaveRecommendationDraftCommandHandler _saveDraftHandler = null!;
     private McpToolServer _mcpServer = null!;
 
     [SetUp]
@@ -41,7 +42,8 @@ public class WebRoutesEndToEndTests
         var chatModel = new SyntheticChatModel();
 
         _docExtractor = new SyntheticDocumentExtractor();
-        _mcpServer = new McpToolServer(identityService, creditService, policyRetriever);
+        _saveDraftHandler = new SaveRecommendationDraftCommandHandler(_appRepo, _recRepo);
+        _mcpServer = new McpToolServer(_appRepo, identityService, incomeService, creditService, policyRetriever, _saveDraftHandler);
 
         _qnaHandler = new AskProductQuestionQueryHandler(policyRetriever, chatModel);
         _evalHandler = new EvaluateEligibilityCommandHandler(_appRepo, identityService, incomeService, creditService);
@@ -99,11 +101,11 @@ public class WebRoutesEndToEndTests
     [Test]
     public void AdminController_Index_ShouldReturnViewResultWithMcpTools()
     {
-        var controller = new AdminController(_mcpServer);
+        var controller = new AdminController();
         var result = controller.Index() as ViewResult;
         Assert.That(result, Is.Not.Null);
-        var tools = result!.Model as IEnumerable<McpToolDefinition>;
+        var tools = result!.Model as IEnumerable<McpTool>;
         Assert.That(tools, Is.Not.Null);
-        Assert.That(tools!.Count(), Is.EqualTo(3));
+        Assert.That(tools!.Count(), Is.EqualTo(5));
     }
 }

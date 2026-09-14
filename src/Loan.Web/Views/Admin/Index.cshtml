@@ -1,4 +1,4 @@
-@model IEnumerable<Loan.Infrastructure.MCP.McpToolDefinition>
+@model IEnumerable<Loan.Infrastructure.MCP.McpTool>
 
 @{
     ViewData["Title"] = "System Admin Dashboard";
@@ -15,7 +15,7 @@
 <div class="card">
     <div class="card-header">
         <h2 class="card-title">🔌 Approved MCP Tools Registry (FR-09)</h2>
-        <span class="badge badge-success">3 Approved Tools</span>
+        <span class="badge badge-success">5 Approved Tools</span>
     </div>
 
     <div class="table-container">
@@ -35,7 +35,7 @@
                         <tr>
                             <td><code>@tool.Name</code></td>
                             <td>@tool.Description</td>
-                            <td><span class="badge badge-success">Read-Only / Scoped</span></td>
+                            <td><span class="badge badge-success">Application Scoped / Safe Draft Only</span></td>
                         </tr>
                     }
                 }
