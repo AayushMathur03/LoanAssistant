@@ -31,10 +31,14 @@
 - [x] Verify full solution test suite passing (30/30 tests passing, 0 failing across all projects).
 - [x] Complete Slice 3 release gate review (Runtime fallback, Effective version selection, Indexing worker idempotency, RAG end-to-end flow, Insufficient evidence refusal, Citations, 8 seed docs / 24 chunks).
 
-### Slice 4: Synthetic Document Upload & Extraction
-- [ ] Build upload intake pipeline with candidate field extraction.
-- [ ] Implement confidence scoring & provenance tracking.
-- [ ] Implement interactive low-confidence confirmation UI.
+### Slice 4: Synthetic Document Upload & Extraction Pipeline
+- [x] Implement `IDocumentStorageService` and `LocalFileDocumentStorageService` for local stream storage (`App_Data/Uploads`).
+- [x] Implement `DocumentUploadValidator` for file security (allowed extensions, MIME validation, 10MB file limit, path traversal rejection).
+- [x] Enhance `SyntheticDocumentExtractor` supporting 5 document types (Paystub, W-2, Bank Statement, Driver License/Passport, Tax Return), sensitive SSN masking (`***-**-6789`), and low-confidence edge cases ($<0.85$).
+- [x] Implement `UploadAndExtractDocumentCommand` and `ConfirmOrOverrideExtractedFieldsCommand` with role-based authorization (Applicant/Officer allowed, Compliance read-only rejection) and application isolation.
+- [x] Add EF Core JSON column mappings (`DocumentsJson`, `DocumentAuditTrailJson`) and migration `AddDocumentExtraction`.
+- [x] Implement `DocumentStorageTests`, `DocumentExtractionTests`, `DocumentAuthorizationTests`, and `DocumentPersistenceIntegrationTests`.
+- [x] Verify full solution test suite passing (44/44 tests passing).
 
 ### Slice 5: Typed Verification Tools & MCP
 - [ ] Build typed `IIdentityReader`, `IIncomeReader`, `ICreditReader` synthetic datasets.

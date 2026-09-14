@@ -27,7 +27,15 @@ public static class InfrastructureServiceCollectionExtensions
         // Register Azure OpenAI Chat Model
         services.AddSingleton<IChatModel, AzureOpenAI.AzureOpenAIChatModel>();
 
-        // Register Policy Retriever (Hybrid Azure AI Search with Synthetic fallback)
+        // Register Document Storage & Extractor
+        services.AddSingleton<IDocumentStorageService, Documents.LocalFileDocumentStorageService>();
+        services.AddScoped<IDocumentExtractor, Documents.SyntheticDocumentExtractor>();
+
+        // Register Slice 4 CQRS Command Handlers
+        services.AddScoped<Application.Documents.UploadAndExtractDocumentCommandHandler>();
+        services.AddScoped<Application.Documents.ConfirmOrOverrideExtractedFieldsCommandHandler>();
+
+        // Register Policy Retriever (Hybrid Azure AI Search)
         services.AddSingleton<Search.SyntheticPolicyRetriever>();
         services.AddScoped<IPolicyRetriever, Search.AzureAiSearchPolicyRetriever>();
         services.AddScoped<Search.PolicyIndexer>();

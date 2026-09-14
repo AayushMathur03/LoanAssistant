@@ -61,7 +61,11 @@ public class WebRoutesEndToEndTests
     [Test]
     public async Task ApplicantController_Index_ShouldReturnViewResultWithApplications()
     {
-        var controller = new ApplicantController(_qnaHandler, _docExtractor, _appRepo, _evalHandler);
+        var storageService = new LocalFileDocumentStorageService(Microsoft.Extensions.Logging.Abstractions.NullLogger<LocalFileDocumentStorageService>.Instance);
+        var uploadHandler = new Loan.Application.Documents.UploadAndExtractDocumentCommandHandler(_appRepo, storageService, _docExtractor);
+        var confirmHandler = new Loan.Application.Documents.ConfirmOrOverrideExtractedFieldsCommandHandler(_appRepo);
+
+        var controller = new ApplicantController(_qnaHandler, uploadHandler, confirmHandler, _appRepo, _evalHandler);
         var result = await controller.Index() as ViewResult;
 
         Assert.That(result, Is.Not.Null);

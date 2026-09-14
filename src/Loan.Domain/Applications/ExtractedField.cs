@@ -1,12 +1,6 @@
-namespace Loan.Domain.Applications;
+using Loan.Domain.Documents;
 
-public enum FieldConfirmationStatus
-{
-    Unconfirmed,
-    ConfirmedByApplicant,
-    ConfirmedByOfficer,
-    Rejected
-}
+namespace Loan.Domain.Applications;
 
 public class ExtractedField<T>
 {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Loan.Domain.Applications;
 using Loan.Domain.Common;
+using Loan.Domain.Documents;
 using Loan.Domain.Eligibility;
 using Loan.Domain.Products;
 using Loan.Domain.Recommendations;
@@ -73,6 +74,8 @@ public class LoanApplicationEntity
     public string FactsJson { get; set; } = "{}";
     public string ProductRulesJson { get; set; } = "{}";
     public string? IndicatorsJson { get; set; }
+    public string DocumentsJson { get; set; } = "[]";
+    public string DocumentAuditTrailJson { get; set; } = "[]";
 
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
@@ -97,6 +100,34 @@ public class LoanApplicationEntity
             app.SetRecommendation(recommendation, UpdatedAtUtc);
         }
 
+        // Restore Document Records
+        if (!string.IsNullOrWhiteSpace(DocumentsJson) && DocumentsJson != "[]")
+        {
+            var docDtos = JsonSerializer.Deserialize<List<ExtractedDocumentRecordDto>>(DocumentsJson);
+            if (docDtos != null)
+            {
+                foreach (var docDto in docDtos)
+                {
+                    var doc = docDto.ToDomain();
+                    app.AddDocumentRecord(doc, UpdatedAtUtc);
+                }
+            }
+        }
+
+        // Restore Document Audit Trail
+        if (!string.IsNullOrWhiteSpace(DocumentAuditTrailJson) && DocumentAuditTrailJson != "[]")
+        {
+            var auditDtos = JsonSerializer.Deserialize<List<FieldOverrideAuditDto>>(DocumentAuditTrailJson);
+            if (auditDtos != null)
+            {
+                var auditField = typeof(LoanApplication).GetField("_documentAuditTrail", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (auditField?.GetValue(app) is List<FieldOverrideAuditEntry> auditList)
+                {
+                    auditList.AddRange(auditDtos.Select(a => a.ToDomain()));
+                }
+            }
+        }
+
         typeof(LoanApplication).GetProperty(nameof(LoanApplication.Status))!
             .SetValue(app, Status);
         typeof(LoanApplication).GetProperty(nameof(LoanApplication.UpdatedAtUtc))!
@@ -107,6 +138,9 @@ public class LoanApplicationEntity
 
     public static LoanApplicationEntity FromDomain(LoanApplication app)
     {
+        var docDtos = app.Documents.Select(ExtractedDocumentRecordDto.FromDomain).ToList();
+        var auditDtos = app.DocumentAuditTrail.Select(FieldOverrideAuditDto.FromDomain).ToList();
+
         return new LoanApplicationEntity
         {
             ApplicationId = app.ApplicationId,
@@ -116,6 +150,8 @@ public class LoanApplicationEntity
             FactsJson = JsonSerializer.Serialize(ApplicantFactsDto.FromDomain(app.Facts)),
             ProductRulesJson = JsonSerializer.Serialize(ProductRulesDto.FromDomain(app.ProductRules)),
             IndicatorsJson = app.Indicators != null ? JsonSerializer.Serialize(EligibilityIndicatorsDto.FromDomain(app.Indicators)) : null,
+            DocumentsJson = JsonSerializer.Serialize(docDtos),
+            DocumentAuditTrailJson = JsonSerializer.Serialize(auditDtos),
             CreatedAtUtc = app.CreatedAtUtc,
             UpdatedAtUtc = app.UpdatedAtUtc
         };
@@ -260,3 +296,77 @@ internal record CitationDto(string DocumentTitle, string PolicyVersion, string S
 }
 
 internal record AuditEntryDto(string Action, string PerformedBy, DateTime TimestampUtc, string Notes);
+
+internal record ExtractedFieldRecordDto(
+    string FieldName,
+    string DisplayValue,
+    string RawValueMasked,
+    float ConfidenceScore,
+    string SourceDocumentId,
+    string ProvenanceExcerpt,
+    bool IsSensitive,
+    bool IsValidFormat,
+    FieldConfirmationStatus Status,
+    string? ConfirmedValue,
+    string? ConfirmedBy,
+    string? ConfirmedRole,
+    DateTime? ConfirmedAtUtc)
+{
+    public ExtractedFieldRecord ToDomain()
+    {
+        var rec = new ExtractedFieldRecord(FieldName, DisplayValue, RawValueMasked, ConfidenceScore, SourceDocumentId, ProvenanceExcerpt, IsSensitive, IsValidFormat, Status);
+        if (!string.IsNullOrWhiteSpace(ConfirmedBy) && !string.IsNullOrWhiteSpace(ConfirmedValue))
+        {
+            rec.ConfirmOrOverride(ConfirmedValue, ConfirmedBy, ConfirmedRole ?? "User", ConfirmedAtUtc ?? DateTime.UtcNow);
+        }
+        return rec;
+    }
+
+    public static ExtractedFieldRecordDto FromDomain(ExtractedFieldRecord f) => new(
+        f.FieldName, f.DisplayValue, f.RawValueMasked, f.ConfidenceScore, f.SourceDocumentId, f.ProvenanceExcerpt,
+        f.IsSensitive, f.IsValidFormat, f.Status, f.ConfirmedValue, f.ConfirmedBy, f.ConfirmedRole, f.ConfirmedAtUtc);
+}
+
+internal record ExtractedDocumentRecordDto(
+    string DocumentId,
+    string ApplicationId,
+    string FileName,
+    string ContentType,
+    long FileSizeBytes,
+    string StorageReference,
+    string HashSha256,
+    Loan.Domain.Documents.DocumentType DocumentType,
+    Loan.Domain.Documents.ExtractionStatus Status,
+    DateTime UploadedAtUtc,
+    List<ExtractedFieldRecordDto> Fields)
+{
+    public ExtractedDocumentRecord ToDomain()
+    {
+        var doc = new ExtractedDocumentRecord(DocumentId, ApplicationId, FileName, ContentType, FileSizeBytes, StorageReference, HashSha256, DocumentType, UploadedAtUtc);
+        doc.AddExtractedFields(Fields.Select(f => f.ToDomain()));
+        doc.UpdateStatus(Status);
+        return doc;
+    }
+
+    public static ExtractedDocumentRecordDto FromDomain(ExtractedDocumentRecord d) => new(
+        d.DocumentId, d.ApplicationId, d.FileName, d.ContentType, d.FileSizeBytes, d.StorageReference, d.HashSha256,
+        d.DocumentType, d.Status, d.UploadedAtUtc, d.Fields.Select(ExtractedFieldRecordDto.FromDomain).ToList());
+}
+
+internal record FieldOverrideAuditDto(
+    string AuditId,
+    string ApplicationId,
+    string FieldName,
+    string DocumentId,
+    string ActorId,
+    string ActorRole,
+    DateTime TimestampUtc,
+    string Action,
+    string Reason,
+    string CorrelationId)
+{
+    public FieldOverrideAuditEntry ToDomain() => new(AuditId, ApplicationId, FieldName, DocumentId, ActorId, ActorRole, TimestampUtc, Action, Reason, CorrelationId);
+
+    public static FieldOverrideAuditDto FromDomain(FieldOverrideAuditEntry a) => new(
+        a.AuditId, a.ApplicationId, a.FieldName, a.DocumentId, a.ActorId, a.ActorRole, a.TimestampUtc, a.Action, a.Reason, a.CorrelationId);
+}

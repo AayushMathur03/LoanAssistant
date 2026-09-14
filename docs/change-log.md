@@ -2,6 +2,19 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 4 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Synthetic Document Upload & Candidate Field Extraction Pipeline**:
+  - Implemented `IDocumentStorageService` abstraction and `LocalFileDocumentStorageService` streaming uploaded files to `App_Data/Uploads/{ApplicationId}/` using SHA-256 hash generation and sanitized GUID storage references. Raw file bytes are isolated outside EF Core domain aggregates.
+  - Implemented `DocumentUploadValidator` for file security (allowed extensions: `.pdf`, `.png`, `.jpg`, `.jpeg`, `.txt`, `.csv`, `.json`, `.md`; MIME type verification, 10MB maximum file size limit, and path traversal rejection `..`).
+  - Enhanced `SyntheticDocumentExtractor` supporting 5 document categories (Payslip/Paystub, W-2, Bank Statement, Driver License/Passport, Tax Return), deterministic synthetic extraction examples, low-confidence edge case samples ($<0.85$), and sensitive identifier masking (SSNs formatted as `***-**-6789`).
+  - Implemented `UploadAndExtractDocumentCommand` and `ConfirmOrOverrideExtractedFieldsCommand` with role-based authorization (Applicant can confirm their own facts, Officer can override, Compliance read-only rejected) and strict application ID isolation.
+  - Implemented safe audit logging via `FieldOverrideAuditEntry` tracking application ID, field, document ID, actor, role, timestamp, action ("Confirm" vs "Override"), reason, and correlation ID without raw PII values.
+  - Added EF Core Migration `AddDocumentExtraction` and JSON column mappings (`DocumentsJson`, `DocumentAuditTrailJson`).
+  - Added `DocumentStorageTests`, `DocumentExtractionTests`, `DocumentAuthorizationTests`, and `DocumentPersistenceIntegrationTests`.
+- Total tests passing: **44/44 tests passing** across 6 test projects (Domain: 11, Application: 11, Prompt: 4, Contract: 3, E2E: 4, Integration: 11).
+
 ## [Slice 3 Release Gate Passed] - 2026-09-14
 
 ### Added & Verified

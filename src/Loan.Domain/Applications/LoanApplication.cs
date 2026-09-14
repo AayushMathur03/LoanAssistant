@@ -1,4 +1,5 @@
 using Loan.Domain.Common;
+using Loan.Domain.Documents;
 using Loan.Domain.Eligibility;
 using Loan.Domain.Products;
 using Loan.Domain.Recommendations;
@@ -28,6 +29,12 @@ public class LoanApplication
     public ProductRules ProductRules { get; private set; }
     public EligibilityIndicators? Indicators { get; private set; }
     public Recommendation? CurrentRecommendation { get; private set; }
+
+    public IReadOnlyList<ExtractedDocumentRecord> Documents => _documents.AsReadOnly();
+    private readonly List<ExtractedDocumentRecord> _documents = new();
+
+    public IReadOnlyList<FieldOverrideAuditEntry> DocumentAuditTrail => _documentAuditTrail.AsReadOnly();
+    private readonly List<FieldOverrideAuditEntry> _documentAuditTrail = new();
 
     public DateTime CreatedAtUtc { get; }
     public DateTime UpdatedAtUtc { get; private set; }
@@ -120,6 +127,79 @@ public class LoanApplication
 
         CurrentRecommendation.ReturnForMoreInformation(officerId, notes, timestampUtc);
         Status = ApplicationStatus.InformationRequested;
+        UpdatedAtUtc = timestampUtc;
+    }
+
+    public void AddDocumentRecord(ExtractedDocumentRecord documentRecord, DateTime timestampUtc)
+    {
+        ArgumentNullException.ThrowIfNull(documentRecord);
+        if (documentRecord.ApplicationId != ApplicationId)
+        {
+            throw new InvalidOperationException($"Cannot attach document belonging to ApplicationId '{documentRecord.ApplicationId}' to Application '{ApplicationId}'.");
+        }
+
+        _documents.Add(documentRecord);
+        Status = ApplicationStatus.UnderDocumentReview;
+        UpdatedAtUtc = timestampUtc;
+    }
+
+    public void ConfirmOrOverrideField(
+        string documentId,
+        string fieldName,
+        string confirmedValue,
+        string actorId,
+        string actorRole,
+        string reason,
+        string correlationId,
+        DateTime timestampUtc)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(actorId);
+
+        var doc = _documents.FirstOrDefault(d => d.DocumentId == documentId);
+        if (doc == null)
+        {
+            throw new InvalidOperationException($"Document '{documentId}' was not found on Application '{ApplicationId}'.");
+        }
+
+        var field = doc.Fields.FirstOrDefault(f => f.FieldName == fieldName);
+        if (field == null)
+        {
+            throw new InvalidOperationException($"Field '{fieldName}' was not found in Document '{documentId}'.");
+        }
+
+        string actionType = string.Equals(field.DisplayValue, confirmedValue, StringComparison.OrdinalIgnoreCase) ? "Confirm" : "Override";
+
+        field.ConfirmOrOverride(confirmedValue, actorId, actorRole, timestampUtc);
+
+        var audit = new FieldOverrideAuditEntry(
+            auditId: $"AUD-{Guid.NewGuid():N}",
+            applicationId: ApplicationId,
+            fieldName: fieldName,
+            documentId: documentId,
+            actorId: actorId,
+            actorRole: actorRole,
+            timestampUtc: timestampUtc,
+            action: actionType,
+            reason: string.IsNullOrWhiteSpace(reason) ? "Manual field review" : reason,
+            correlationId: string.IsNullOrWhiteSpace(correlationId) ? Guid.NewGuid().ToString("N") : correlationId);
+
+        _documentAuditTrail.Add(audit);
+
+        // Update Facts dynamically if candidate field affects income/debt
+        if (decimal.TryParse(confirmedValue, out var numValue))
+        {
+            if (fieldName.Equals("MonthlyGrossIncome", StringComparison.OrdinalIgnoreCase) || fieldName.Equals("StatedIncome", StringComparison.OrdinalIgnoreCase))
+            {
+                Facts = new ApplicantFacts(Facts.ApplicantId, Facts.FullName, Facts.SyntheticId, new Money(numValue), Facts.MonthlyDebts, Facts.RequestedLoanAmount, Facts.EstimatedPropertyValue, Facts.CreditScore, Facts.EmploymentStatus, Facts.LoanPurpose);
+            }
+            else if (fieldName.Equals("StatedDebts", StringComparison.OrdinalIgnoreCase) || fieldName.Equals("MonthlyDebts", StringComparison.OrdinalIgnoreCase))
+            {
+                Facts = new ApplicantFacts(Facts.ApplicantId, Facts.FullName, Facts.SyntheticId, Facts.MonthlyGrossIncome, new Money(numValue), Facts.RequestedLoanAmount, Facts.EstimatedPropertyValue, Facts.CreditScore, Facts.EmploymentStatus, Facts.LoanPurpose);
+            }
+        }
+
         UpdatedAtUtc = timestampUtc;
     }
 }

@@ -1,4 +1,5 @@
 using Loan.Domain.Applications;
+using Loan.Domain.Documents;
 
 namespace Loan.Application.DTOs;
 

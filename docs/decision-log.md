@@ -55,3 +55,21 @@ Record of key architectural, technical, and implementation decisions for the pro
 - **Context**: Release-gate review requires that production runtime must NOT silently fall back to synthetic/in-memory test data when Azure AI Search or Azure OpenAI configuration is missing.
 - **Decision**: Registered `AzureAiSearchPolicyRetriever` exclusively as `IPolicyRetriever` in production DI. In `AzureAiSearchPolicyRetriever`, missing credentials throw an explicit `InvalidOperationException` with clear guidance on setting User Secrets. `SyntheticPolicyRetriever` is reserved strictly for offline unit/contract/prompt/end-to-end tests.
 - **Consequences**: Prevents deceptive test mock data from serving end users in misconfigured production/staging environments.
+
+---
+
+## ADR-007: Document Storage Abstraction & Local Disk Stream Persistence (`IDocumentStorageService`)
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Uploaded documents must NOT store raw file byte blobs inside `LoanApplication` domain aggregates or SQL Server JSON database columns.
+- **Decision**: Created `IDocumentStorageService` abstraction in `Loan.Application.Abstractions` and implemented `LocalFileDocumentStorageService` in `Loan.Infrastructure.Documents`. Files are streamed directly to `App_Data/Uploads/{ApplicationId}/` using SHA-256 hash generation and sanitized GUID storage references (`DOC-STORE-{Guid.NewGuid():N}.bin`). Domain aggregates store only metadata, SHA-256 hash, and storage references.
+- **Consequences**: Zero database bloat, low memory footprint via stream processing, and seamless replaceability for cloud storage (e.g., Azure Blob Storage) in future infrastructure iterations.
+
+---
+
+## ADR-008: Secure Upload Validation, Sensitive Identifier Masking, and Role Authorization
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Document upload and candidate field extraction require defense-in-depth against malicious file uploads, sensitive data leaks, unauthorized field overrides, and cross-application data tampering.
+- **Decision**: Implemented `DocumentUploadValidator` enforcing extension whitelisting, MIME type checks, 10MB size limits, and path traversal rejection (`..`). Implemented sensitive identifier masking (`ExtractedFieldRecord.MaskSensitiveValue` formatting SSNs as `***-**-6789`). Enforced role-based authorization in `ConfirmOrOverrideExtractedFieldsCommand` (Applicant can confirm their own facts, Officer can override, Compliance read-only rejected) and strict application ID isolation.
+- **Consequences**: Protects against file upload vulnerabilities, prevents sensitive PII logging, and maintains auditability via `FieldOverrideAuditEntry`.
