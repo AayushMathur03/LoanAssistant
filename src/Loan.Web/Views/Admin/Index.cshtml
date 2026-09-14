@@ -1,0 +1,45 @@
+@model IEnumerable<Loan.Infrastructure.MCP.McpToolDefinition>
+
+@{
+    ViewData["Title"] = "System Admin Dashboard";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">System Admin Dashboard</h1>
+        <p class="page-subtitle">Governance over approved MCP tools, AI search policy index, specialist agent step definitions, and telemetry.</p>
+    </div>
+    <span class="badge badge-info">Administrator Access</span>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">🔌 Approved MCP Tools Registry (FR-09)</h2>
+        <span class="badge badge-success">3 Approved Tools</span>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Scope & Security Policy</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var tool in Model)
+                    {
+                        <tr>
+                            <td><code>@tool.Name</code></td>
+                            <td>@tool.Description</td>
+                            <td><span class="badge badge-success">Read-Only / Scoped</span></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

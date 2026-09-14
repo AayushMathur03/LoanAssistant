@@ -1,0 +1,184 @@
+@model IEnumerable<Loan.Domain.Applications.LoanApplication>
+
+@{
+    ViewData["Title"] = "Applicant Portal";
+    var advice = ViewBag.AdviceResponse as Loan.Application.ProductAdvice.ProductAdviceResponseDto;
+    var extractedFields = ViewBag.ExtractedFields as IEnumerable<Loan.Application.DTOs.ExtractedFieldDto>;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Applicant Portal</h1>
+        <p class="page-subtitle">Ask product questions, upload synthetic documents, and confirm extracted facts.</p>
+    </div>
+    <span class="badge badge-info">Applicant Self-Service</span>
+</div>
+
+<!-- Grid Layout: Q&A RAG Panel + Document Intake Panel -->
+<div class="review-grid">
+    <!-- Panel 1: Product Q&A RAG Assistant (Flow A) -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🔍 Product & Policy Q&A Assistant</h2>
+            <span class="badge badge-success">Grounded RAG v1.2</span>
+        </div>
+        
+        <form asp-action="AskQuestion" method="post" style="margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label class="form-label" for="questionInput">Ask a Question About Loan Products & Guidelines:</label>
+                <input type="text" id="questionInput" name="question" class="form-control" placeholder="e.g. What is the maximum LTV ratio allowed?" value="@ViewBag.Question" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Search Policy Evidence</button>
+        </form>
+
+        @if (advice != null)
+        {
+            <div class="card" style="background-color: var(--bg-main); border: 1px solid var(--border-color);">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--color-primary); margin-bottom: 0.5rem;">AI Response:</h3>
+                <p style="font-size: 0.9rem; line-height: 1.6;">@advice.Answer</p>
+
+                @if (advice.Citations.Any())
+                {
+                    <div class="citation-box">
+                        <div class="citation-header">
+                            <span>📜 Effective Policy Citation (Ver: @advice.EffectivePolicyVersion)</span>
+                            <button class="persona-btn btn-copy-citation" data-citation-text="@advice.Citations.First().Excerpt">Copy Citation</button>
+                        </div>
+                        <p class="citation-excerpt">"@advice.Citations.First().Excerpt"</p>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                            Source: @advice.Citations.First().DocumentTitle — @advice.Citations.First().SectionOrPage
+                        </p>
+                    </div>
+                }
+
+                <p style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.75rem;">@advice.NonApprovalDisclaimer</p>
+            </div>
+        }
+    </div>
+
+    <!-- Panel 2: Synthetic Document Intake & Field Extraction (Flow B) -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📄 Document Intake & Fact Confirmation</h2>
+            <span class="badge badge-warning">Extraction Pipeline</span>
+        </div>
+
+        <form asp-action="UploadDocument" method="post" enctype="multipart/form-data" style="margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label class="form-label" for="docInput">Upload Synthetic Paystub or ID Document:</label>
+                <input type="file" id="docInput" name="document" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Upload & Extract Fields</button>
+        </form>
+
+        @if (extractedFields != null)
+        {
+            <div style="margin-top: 1rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">Extracted Fields (@ViewBag.UploadedFileName):</h3>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Field Name</th>
+                                <th>Extracted Value</th>
+                                <th>Confidence</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var field in extractedFields)
+                            {
+                                <tr>
+                                    <td><strong>@field.FieldName</strong></td>
+                                    <td>@field.RawValue</td>
+                                    <td>
+                                        <div class="confidence-meter">
+                                            <div class="confidence-bar">
+                                                <div class="confidence-fill @(field.ConfidenceScore >= 0.85f ? "confidence-high" : "confidence-medium")" style="width: @((int)(field.ConfidenceScore * 100))%;"></div>
+                                            </div>
+                                            <span style="font-size: 0.75rem; font-weight: 600;">@((int)(field.ConfidenceScore * 100))%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (field.NeedsConfirmation)
+                                        {
+                                            <span class="badge badge-warning">Requires Confirmation</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-success">High Confidence</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (field.NeedsConfirmation)
+                                        {
+                                            <button class="btn btn-secondary btn-confirm-field" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Confirm</button>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size: 0.8rem; color: var(--text-muted);">Auto-Accepted</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Active Applications Summary Card -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📋 Your Submitted Applications</h2>
+    </div>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Application ID</th>
+                    <th>Product</th>
+                    <th>Requested Loan</th>
+                    <th>DTI Ratio</th>
+                    <th>LTV Ratio</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var app in Model)
+                    {
+                        <tr>
+                            <td><strong>@app.ApplicationId</strong></td>
+                            <td>@app.ProductRules.ProductName</td>
+                            <td>@app.Facts.RequestedLoanAmount</td>
+                            <td>@(app.Indicators != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "N/A")</td>
+                            <td>@(app.Indicators != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")</td>
+                            <td>
+                                <span class="badge @(app.Status == ApplicationStatus.Approved ? "badge-success" : app.Status == ApplicationStatus.Rejected ? "badge-danger" : "badge-warning")">
+                                    @app.Status
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/Officer/Review/@app.ApplicationId" class="btn btn-secondary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">View Details</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            No active loan applications found. Submit a new synthetic document above to begin.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

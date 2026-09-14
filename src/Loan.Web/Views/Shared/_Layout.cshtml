@@ -1,49 +1,53 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Loan.Web</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Loan.Web.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] - Loan Application & Compliance Review Assistant</title>
+    <link rel="stylesheet" href="~/css/fintech-theme.css" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Loan.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="app-container">
+        <!-- Top Navbar Header -->
+        <header class="navbar">
+            <a href="/" class="navbar-brand">
+                <div class="brand-icon">LA</div>
+                <span>Apex Lending AI</span>
+            </a>
+
+            <nav>
+                <ul class="navbar-nav">
+                    <li><a href="/Applicant" class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Applicant" ? "active" : "")">Applicant Portal</a></li>
+                    <li><a href="/Officer" class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Officer" ? "active" : "")">Officer Review</a></li>
+                    <li><a href="/Compliance" class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Compliance" ? "active" : "")">Compliance Audit</a></li>
+                    <li><a href="/Admin" class="nav-link @(ViewData["ActiveNav"]?.ToString() == "Admin" ? "active" : "")">System Admin</a></li>
+                </ul>
+            </nav>
+
+            <!-- Active Persona Switcher -->
+            <div class="persona-switcher">
+                <button class="persona-btn @(ViewData["ActiveNav"]?.ToString() == "Applicant" ? "active" : "")" data-persona="applicant">Applicant</button>
+                <button class="persona-btn @(ViewData["ActiveNav"]?.ToString() == "Officer" ? "active" : "")" data-persona="officer">Loan Officer</button>
+                <button class="persona-btn @(ViewData["ActiveNav"]?.ToString() == "Compliance" ? "active" : "")" data-persona="compliance">Compliance</button>
+                <button class="persona-btn @(ViewData["ActiveNav"]?.ToString() == "Admin" ? "active" : "")" data-persona="admin">Admin</button>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+        </header>
+
+        <!-- Main Page Content -->
+        <main role="main" class="main-content">
             @RenderBody()
         </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p><strong>Apex Lending Assistant v1.2</strong> — CapGemini AI Launchpad Capstone | Privacy-Aware Human-in-the-Loop Loan Processing System</p>
+            <p style="font-size: 0.75rem; margin-top: 0.25rem; color: #64748b;">
+                Disclaimer: AI models never issue binding loan decisions. All final eligibility approvals require authorized loan officer sign-off per BR-01 & BR-07.
+            </p>
+        </footer>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Loan.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/site.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

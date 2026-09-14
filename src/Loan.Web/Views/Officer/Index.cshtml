@@ -1,0 +1,72 @@
+@model IEnumerable<Loan.Domain.Applications.LoanApplication>
+
+@{
+    ViewData["Title"] = "Loan Officer Workqueue";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Loan Officer Review Workqueue</h1>
+        <p class="page-subtitle">Review applications requiring human loan officer decision, policy exception sign-off, or evidence verification.</p>
+    </div>
+    <span class="badge badge-warning">Human-in-the-Loop Required</span>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📥 Applications Pending Review</h2>
+        <span class="badge badge-info">@Model.Count() Queue Items</span>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Application ID</th>
+                    <th>Applicant Name</th>
+                    <th>Product</th>
+                    <th>Loan Amount</th>
+                    <th>Calculated DTI</th>
+                    <th>Calculated LTV</th>
+                    <th>Recommendation Draft</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var app in Model)
+                    {
+                        var recType = app.CurrentRecommendation?.DecisionRecommendation.ToString() ?? "Pending Verification";
+                        <tr>
+                            <td><strong>@app.ApplicationId</strong></td>
+                            <td>@app.Facts.FullName</td>
+                            <td>@app.ProductRules.ProductName</td>
+                            <td>@app.Facts.RequestedLoanAmount</td>
+                            <td>@(app.Indicators != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "N/A")</td>
+                            <td>@(app.Indicators != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")</td>
+                            <td>
+                                <span class="badge @(recType == "Approve" ? "badge-success" : recType == "PendingInformation" ? "badge-warning" : "badge-info")">
+                                    @recType
+                                </span>
+                            </td>
+                            <td><span class="badge badge-warning">@app.Status</span></td>
+                            <td>
+                                <a href="/Officer/Review/@app.ApplicationId" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Review Application →</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Workqueue is clear. No applications currently pending loan officer review.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,177 @@
+@model Loan.Domain.Applications.LoanApplication
+
+@{
+    ViewData["Title"] = $"Review Application {Model.ApplicationId}";
+    var rec = Model.CurrentRecommendation;
+    var ind = Model.Indicators;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Application Review: @Model.ApplicationId</h1>
+        <p class="page-subtitle">Applicant: <strong>@Model.Facts.FullName</strong> (Synthetic ID: <code>@Model.Facts.SyntheticId</code>)</p>
+    </div>
+    <span class="badge badge-warning">Status: @Model.Status</span>
+</div>
+
+<!-- Side-by-Side Review Split Grid (Flow C) -->
+<div class="review-grid">
+    <!-- Left Column: Verified Facts & Verification Tools Outputs -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🔍 Facts & Verification Evidence</h2>
+            <span class="badge badge-info">Tool Provenance</span>
+        </div>
+
+        <table class="table" style="margin-bottom: 1.5rem;">
+            <tbody>
+                <tr>
+                    <td><strong>Monthly Gross Income:</strong></td>
+                    <td>@Model.Facts.MonthlyGrossIncome</td>
+                    <td>
+                        @if (Model.Facts.IsIncomeVerified)
+                        {
+                            <span class="badge badge-success">Verified Tool ✓</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Unverified</span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Monthly Debts:</strong></td>
+                    <td>@Model.Facts.MonthlyDebts</td>
+                    <td><span class="badge badge-info">Declared</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Requested Loan Amount:</strong></td>
+                    <td>@Model.Facts.RequestedLoanAmount</td>
+                    <td><span class="badge badge-info">Stated</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Estimated Property Value:</strong></td>
+                    <td>@Model.Facts.EstimatedPropertyValue</td>
+                    <td><span class="badge badge-info">Appraisal</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Credit Score:</strong></td>
+                    <td>@Model.Facts.CreditScore</td>
+                    <td>
+                        @if (Model.Facts.IsCreditVerified)
+                        {
+                            <span class="badge badge-success">Verified Bureau ✓</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Stated</span>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Identity Verification:</strong></td>
+                    <td colspan="2">
+                        @if (Model.Facts.IsIdentityVerified)
+                        {
+                            <span class="badge badge-success">Identity Verified ✓</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-danger">Unverified Identity</span>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Calculated Ratios (BR-03) -->
+        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">Calculated Deterministic Ratios:</h3>
+        @if (ind != null)
+        {
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Debt-to-Income (DTI)</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: @(ind.IsDtiEligible ? "var(--color-success)" : "var(--color-danger)");">
+                        @ind.DebtToIncomeRatio.ToString("P1")
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Max Threshold: @Model.ProductRules.MaxDtiRatio.ToString("P1")</div>
+                </div>
+
+                <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Loan-to-Value (LTV)</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: @(ind.IsLtvEligible ? "var(--color-success)" : "var(--color-danger)");">
+                        @ind.LoanToValueRatio.ToString("P1")
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Max Threshold: @Model.ProductRules.MaxLtvRatio.ToString("P1")</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Right Column: System Recommendation Draft, Citations, Policy Violations, & Officer Action -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🤖 Specialist Agent Recommendation Draft</h2>
+            @if (rec != null)
+            {
+                <span class="badge @(rec.DecisionRecommendation == RecommendationType.Approve ? "badge-success" : rec.DecisionRecommendation == RecommendationType.PendingInformation ? "badge-warning" : "badge-danger")">
+                    Draft: @rec.DecisionRecommendation
+                </span>
+            }
+        </div>
+
+        @if (rec != null)
+        {
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">Summary Reasoning:</h3>
+                <p style="font-size: 0.95rem; line-height: 1.6; margin-top: 0.25rem;">@rec.SummaryReasoning</p>
+            </div>
+
+            @if (rec.MissingEvidenceItems.Any())
+            {
+                <div class="card" style="background: var(--color-warning-bg); border: 1px solid var(--color-warning-border); padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--color-warning); margin-bottom: 0.35rem;">⚠️ Missing Evidence Items (BR-06):</h4>
+                    <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: #92400e;">
+                        @foreach (var item in rec.MissingEvidenceItems)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (rec.Citations.Any())
+            {
+                <div class="citation-box" style="margin-bottom: 1.5rem;">
+                    <div class="citation-header">
+                        <span>📜 Effective Policy Citation (@rec.Citations.First().PolicyVersion)</span>
+                    </div>
+                    <p class="citation-excerpt">"@rec.Citations.First().Excerpt"</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        Source: @rec.Citations.First().DocumentTitle — @rec.Citations.First().SectionOrPage
+                    </p>
+                </div>
+            }
+        }
+
+        <!-- Officer Decision Action Form (BR-07) -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--color-secondary); margin-bottom: 0.75rem;">⚖️ Authorized Officer Decision (BR-07)</h3>
+
+            <form asp-action="SubmitDecision" method="post">
+                <input type="hidden" name="id" value="@Model.ApplicationId" />
+
+                <div class="form-group">
+                    <label class="form-label" for="notesInput">Officer Decision Notes & Justification:</label>
+                    <textarea id="notesInput" name="notes" class="form-control" rows="3" placeholder="Enter decision notes, exception rationale, or info requested..." required></textarea>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="submit" name="action" value="@RecommendationStatus.ApprovedByOfficer" class="btn btn-success">Approve Application</button>
+                    <button type="submit" name="action" value="@RecommendationStatus.ReturnedForInfo" class="btn btn-secondary">Request Information</button>
+                    <button type="submit" name="action" value="@RecommendationStatus.RejectedByOfficer" class="btn btn-danger">Reject Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

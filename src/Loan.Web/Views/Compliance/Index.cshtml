@@ -1,0 +1,67 @@
+@model IEnumerable<Loan.Domain.Applications.LoanApplication>
+
+@{
+    ViewData["Title"] = "Compliance & Audit Dashboard";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Compliance & Audit Log Dashboard</h1>
+        <p class="page-subtitle">Inspect timestamped recommendation audit trails, policy citations, sensitive data masking, and officer decision entries.</p>
+    </div>
+    <span class="badge badge-info">Compliance Auditor View</span>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📜 Audit Trail & Regulatory Event Log</h2>
+        <span class="badge badge-success">BR-05 & BR-07 Compliant</span>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Application ID</th>
+                    <th>Action</th>
+                    <th>Performed By</th>
+                    <th>Timestamp (UTC)</th>
+                    <th>Officer Decision Notes & Justification</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var app in Model)
+                    {
+                        if (app.CurrentRecommendation != null && app.CurrentRecommendation.AuditTrail.Any())
+                        {
+                            foreach (var audit in app.CurrentRecommendation.AuditTrail)
+                            {
+                                <tr>
+                                    <td><strong>@app.ApplicationId</strong></td>
+                                    <td>
+                                        <span class="badge @(audit.Action.Contains("Approved") ? "badge-success" : audit.Action.Contains("Rejected") ? "badge-danger" : "badge-info")">
+                                            @audit.Action
+                                        </span>
+                                    </td>
+                                    <td><code>@audit.PerformedBy</code></td>
+                                    <td>@audit.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>@audit.Notes</td>
+                                </tr>
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            No compliance audit events recorded yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
