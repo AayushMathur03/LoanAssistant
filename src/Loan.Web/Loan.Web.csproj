@@ -9,6 +9,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>LoanAssistant-Web-87612345-EF89</UserSecretsId>
   </PropertyGroup>
 
 </Project>

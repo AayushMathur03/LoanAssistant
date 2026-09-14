@@ -2,18 +2,21 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
-## [Unreleased] - 2026-09-14
+## [Slice 1 Release Gate Passed] - 2026-09-14
 
-### Added
-- Created project tracking documentation: `docs/implementation-status.md`, `task-checklist.md`, `change-log.md`, `decision-log.md`.
-- Implemented core Domain Layer in `Loan.Domain` (11 unit tests passing).
-- Implemented Application Layer in `Loan.Application` (5 unit tests passing).
-- Implemented Infrastructure Layer in `Loan.Infrastructure` (5 contract & integration tests passing).
-- Implemented Presentation & Modern Fintech UI Layer in `Loan.Web` (4 E2E tests passing).
-- Implemented Workers Layer in `Loan.Workers`:
-  - `DocumentProcessingWorker`: Hosted background service polling document intake queue (**FR-02**).
-  - `PolicyIndexingWorker`: Hosted background service managing versioned policy index sync.
-- Implemented Prompt Evaluation Suite in `tests/Loan.PromptTests/`:
-  - `PromptEvaluationDataset`: Repeatable dataset covering Grounded RAG, missing evidence fallbacks, and adversarial prompt injection refusal (**Flow D**).
-  - `PromptEvaluationTests`: NUnit test runner evaluating prompt responses for groundedness, policy citations (**BR-04**), disclaimers, and refusal of illegal prompt overrides (**BR-01**, **BR-07** - 4 tests passing).
-- Achieved **29/29 tests passing** (100% pass rate across all 6 test projects in `LoanAssistant.slnx`).
+### Added / Verified
+- **EF Core Migrations & SQL Server Persistence**:
+  - Reproducible EF Core Migration `20260914103301_InitialCreate.cs` generated and applied to local SQL Server.
+  - Startup migration configured to be development-only (`Database:AutoMigrateOnStartup`).
+  - Verified physical persistence in SQL Server (`LoanAssistantDb`) via `sqlcmd` and SSMS inspection (`LoanApplications` & `Recommendations` tables populated with seeded data).
+- **Secrets Security & Configuration Isolation**:
+  - `appsettings.json` updated with safe template connection string without credentials (`Server=YOUR_SERVER;Database=LoanAssistantDb...`).
+  - User Secrets store configured for local development (`dotnet user-secrets set ConnectionStrings:DefaultConnection ...`).
+- **Clean Architecture Boundary Verification**:
+  - Verified `Loan.Domain` has zero dependencies.
+  - Verified `Loan.Application` references `Loan.Domain` only.
+  - Encapsulated EF Core DI setup in `src/Loan.Infrastructure/DependencyInjection.cs` (`AddInfrastructurePersistence`).
+  - `Loan.Web` references `Microsoft.EntityFrameworkCore.Design` strictly for `dotnet ef` CLI tool host compatibility.
+- **Testing Suite**:
+  - Restored granular repository unit CRUD tests and physical SQL Server disk persistence integration test in `SqlPersistenceIntegrationTests.cs`.
+  - **32/32 tests 100% passing** across 6 test projects.

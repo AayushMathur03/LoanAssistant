@@ -5,10 +5,10 @@ using Loan.Application.Verification;
 using Loan.Domain.Applications;
 using Loan.Domain.Common;
 using Loan.Domain.Products;
+using Loan.Infrastructure;
 using Loan.Infrastructure.AzureOpenAI;
 using Loan.Infrastructure.Documents;
 using Loan.Infrastructure.MCP;
-using Loan.Infrastructure.Persistence;
 using Loan.Infrastructure.Search;
 using Loan.Infrastructure.Verification;
 
@@ -17,9 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MVC services to the container.
 builder.Services.AddControllersWithViews();
 
-// Register Infrastructure Persistence Repositories (Singleton for in-memory demo persistence)
-builder.Services.AddSingleton<ILoanApplicationRepository, InMemoryLoanApplicationRepository>();
-builder.Services.AddSingleton<IRecommendationRepository, InMemoryRecommendationRepository>();
+// Register Infrastructure Persistence Repositories via Infrastructure Composition Extension
+builder.Services.AddInfrastructurePersistence(builder.Configuration);
 
 // Register Infrastructure Adapters & Tools
 builder.Services.AddSingleton<IIdentityReader, SyntheticIdentityService>();
@@ -38,8 +37,11 @@ builder.Services.AddTransient<OfficerDecisionCommandHandler>();
 
 var app = builder.Build();
 
-// Seed initial demo data
-await SeedInitialDemoDataAsync(app.Services);
+// Development-only automatic database migration and starter data seeding
+if (app.Environment.IsDevelopment())
+{
+    await EnsureDatabaseAndSeedAsync(app);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -60,11 +62,23 @@ app.MapControllerRoute(
 
 app.Run();
 
-// Seed sample applications for presentation/demo
-static async Task SeedInitialDemoDataAsync(IServiceProvider services)
+// Apply EF Core migrations and seed sample applications for local development
+static async Task EnsureDatabaseAndSeedAsync(WebApplication app)
 {
-    using var scope = services.CreateScope();
+    using var scope = app.Services.CreateScope();
+    
+    // Check if automatic startup migration is enabled via configuration (default true in Dev)
+    var autoMigrate = app.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup", true);
+    if (autoMigrate)
+    {
+        await scope.ServiceProvider.ApplyInfrastructureMigrationsAsync();
+    }
+
     var repo = scope.ServiceProvider.GetRequiredService<ILoanApplicationRepository>();
+
+    var existing1 = await repo.GetByIdAsync("APP-2026-001");
+    if (existing1 != null) return; // Already seeded in SQL Server
+
     var evalHandler = scope.ServiceProvider.GetRequiredService<EvaluateEligibilityCommandHandler>();
     var draftHandler = scope.ServiceProvider.GetRequiredService<GenerateRecommendationDraftCommandHandler>();
 
