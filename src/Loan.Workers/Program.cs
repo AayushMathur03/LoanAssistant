@@ -1,14 +1,14 @@
 using Loan.Application.Abstractions;
+using Loan.Infrastructure;
 using Loan.Infrastructure.Documents;
-using Loan.Infrastructure.Search;
 using Loan.Workers.Indexing;
 using Loan.Workers.Processing;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 // Register Infrastructure dependencies
+builder.Services.AddInfrastructurePersistence(builder.Configuration);
 builder.Services.AddSingleton<IDocumentExtractor, SyntheticDocumentExtractor>();
-builder.Services.AddSingleton<IPolicyRetriever, SyntheticPolicyRetriever>();
 
 // Register Hosted Services
 builder.Services.AddHostedService<DocumentProcessingWorker>();

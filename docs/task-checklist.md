@@ -22,10 +22,14 @@
 - [x] Verify live response completion & error handling (34/34 tests passing).
 
 ### Slice 3: Synthetic Product/Compliance Documents & Azure AI Search RAG
-- [ ] Create 8 versioned synthetic policy markdown documents.
-- [ ] Implement Azure AI Search index schema and document ingestion worker (`PolicyIndexingWorker`).
-- [ ] Implement `AzureAiSearchPolicyRetriever` with hybrid search & citation metadata.
-- [ ] Verify RAG citations display in UI.
+- [x] Install `Azure.Search.Documents` (v11.6.0 stable GA release) package in `Loan.Infrastructure.csproj`.
+- [x] Create 8 versioned synthetic policy markdown documents in `src/Loan.Infrastructure/Search/SeedPolicies/`.
+- [x] Implement Azure AI Search index schema (`PolicyIndexDocument`) and document ingestion (`PolicyIndexer`).
+- [x] Wire `PolicyIndexingWorker` to automate index creation & 1536-dim embedding generation (`text-embedding-3-small`).
+- [x] Implement `AzureAiSearchPolicyRetriever` with hybrid search, metadata filtering (`productId`, `policyVersion`), and citation metadata.
+- [x] Add `AzureAiSearchIntegrationTests.cs` testing live index synchronization, vector embedding generation, and hybrid retrieval.
+- [x] Verify full solution test suite passing (30/30 tests passing, 0 failing across all projects).
+- [x] Complete Slice 3 release gate review (Runtime fallback, Effective version selection, Indexing worker idempotency, RAG end-to-end flow, Insufficient evidence refusal, Citations, 8 seed docs / 24 chunks).
 
 ### Slice 4: Synthetic Document Upload & Extraction
 - [ ] Build upload intake pipeline with candidate field extraction.

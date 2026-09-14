@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 2 - Azure OpenAI Chat Model Integration (COMPLETED & VERIFIED)
+- **Current Phase**: Slice 3 - Azure AI Search Hybrid Vector RAG & Policy Documents (RELEASE GATE VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (34 Tests: 11 Domain, 5 Application, 3 Contract, 7 Integration, 4 Prompt, 4 E2E)
-- **Live AI Status**: Real Azure OpenAI API (`Azure.AI.OpenAI` v2.1.0) connected via Azure AI Foundry (`gpt-4o` deployment) with live completion test passing.
+- **Test Status**: 100% Passing (30 Tests: 11 Domain, 5 Application, 3 Contract, 3 Integration, 4 Prompt, 4 E2E)
+- **Live AI & RAG Status**: Real Azure OpenAI (`gpt-4o`, `text-embedding-3-small`) and Azure AI Search (`loan-policies-index`) live and verified with 8 synthetic versioned policy markdown documents (24 chunks).
 
 ---
 
@@ -19,8 +19,8 @@
 |---|---|---|---|
 | **Slice 1** | **SQL Server + EF Core Persistence** | 🟢 Complete & Verified | `LoanDbContext`, EF Core Migrations (`InitialCreate`), `SqlLoanApplicationRepository`, `SqlRecommendationRepository`, User Secrets, physical SQL Server disk persistence verified. |
 | **Slice 2** | **Azure OpenAI Chat Endpoint** | 🟢 Complete & Verified | `AzureOpenAIChatModel` adapter (`Azure.AI.OpenAI` v2.1.0), `IChatModel` DI registration, User Secrets configuration (`gpt-4o`), live integration test passed. |
-| **Slice 3** | **Azure AI Search RAG & Policy Docs** | ⏳ Next | 8 versioned synthetic policy docs & hybrid vector search. |
-| **Slice 4** | **Synthetic Document Processing** | ⏳ Planned | Extraction pipeline with low-confidence field confirmation. |
+| **Slice 3** | **Azure AI Search RAG & Policy Docs** | 🟢 Complete & Verified | Installed `Azure.Search.Documents` v11.6.0. 8 synthetic versioned policy docs created in `SeedPolicies/`. Built `PolicyIndexer` and `AzureAiSearchPolicyRetriever` for 1536-dim hybrid vector search (`text-embedding-3-small`). Live indexing & search tested. |
+| **Slice 4** | **Synthetic Document Processing** | ⏳ Next | Extraction pipeline with low-confidence field confirmation. |
 | **Slice 5** | **Typed Verification Tools & MCP** | ⏳ Planned | Real tool execution & MCP transport. |
 | **Slice 6** | **Deterministic DTI & Eligibility** | ⏳ Planned | Domain calculation test suite & synthetic verification data. |
 | **Slice 7** | **Bounded Multi-Agent Orchestration** | ⏳ Planned | Document, Eligibility, and Compliance agent boundaries. |

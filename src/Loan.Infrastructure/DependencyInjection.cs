@@ -27,6 +27,11 @@ public static class InfrastructureServiceCollectionExtensions
         // Register Azure OpenAI Chat Model
         services.AddSingleton<IChatModel, AzureOpenAI.AzureOpenAIChatModel>();
 
+        // Register Policy Retriever (Hybrid Azure AI Search with Synthetic fallback)
+        services.AddSingleton<Search.SyntheticPolicyRetriever>();
+        services.AddScoped<IPolicyRetriever, Search.AzureAiSearchPolicyRetriever>();
+        services.AddScoped<Search.PolicyIndexer>();
+
         return services;
     }
 

@@ -2,6 +2,22 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 3 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Azure AI Search & Hybrid Vector RAG (`Azure.Search.Documents` v11.6.0)**:
+  - Installed official Azure SDK package `Azure.Search.Documents` (v11.6.0) in `Loan.Infrastructure.csproj`.
+  - Created 8 synthetic versioned policy markdown documents in `src/Loan.Infrastructure/Search/SeedPolicies/` (24 policy document chunks).
+  - Built `PolicyIndexDocument` search schema with HNSW vector index profile (1536 dimensions, Cosine metric, `ContentVector`).
+  - Built `PolicyIndexer` for parsing BOM-safe YAML frontmatter metadata and section chunking, generating embeddings via Azure OpenAI `text-embedding-3-small`, and uploading documents into Azure AI Search `loan-policies-index` via idempotent `MergeOrUploadDocumentsAsync`.
+  - Built `AzureAiSearchPolicyRetriever` for hybrid keyword + vector search, metadata filtering (`productId`, `policyVersion`), active version filtering (`isActive eq true`), hybrid RRF score thresholding (`score >= 0.0165`), and citation metadata generation (`CitationDto`).
+  - Verified **Zero Silent Runtime Fallbacks**: missing configuration throws an explicit actionable `InvalidOperationException`.
+  - Verified **Active Policy Version Selection**: Personal Loan v2.0 (`EffectiveFrom: 2024-01-01`, active) automatically selected over expired Personal Loan v1.0 (`EffectiveTo: 2023-12-31`).
+  - Verified **Idempotency & Resilience**: `PolicyIndexingWorker` handles repeated application starts without chunk duplication; index search outages log warnings gracefully without crashing application startup.
+  - Verified **Insufficient Evidence Safety**: Irrelevant policy topics return 0 search results, producing an explicit refusal message from the AI assistant without hallucination.
+  - Verified **Secrets Isolation**: Zero Azure Search or OpenAI credentials committed in git repository.
+- Total tests passing: **30/30 tests passing** across 6 test projects (Domain: 11, Application: 5, Prompt: 4, Contract: 3, E2E: 4, Integration: 3).
+
 ## [Slice 2] - 2026-09-14
 
 ### Added

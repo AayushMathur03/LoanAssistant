@@ -23,7 +23,7 @@ Transform the prototype Loan Assistant into an enterprise-grade solution adherin
 |---|---|---|---|
 | **Slice 1** | **SQL Server + EF Core** | 🟢 Complete | Implemented EF Core `LoanDbContext`, `InitialCreate` migration, `SqlLoanApplicationRepository`, `SqlRecommendationRepository`, User Secrets, and real SQL Server integration tests. |
 | **Slice 2** | **Azure OpenAI Integration** | 🟢 Complete | Implemented `AzureOpenAIChatModel` (`Azure.AI.OpenAI` v2.1.0), `IChatModel` DI registration, User Secrets configuration (`gpt-4o`), and live integration tests. |
-| **Slice 3** | **Synthetic Policies & Azure AI Search** | ⏳ Next | 8 versioned synthetic policy documents, Azure AI Search index schema, ingestion pipeline, hybrid RAG query with versioned citations. |
+| **Slice 3** | **Synthetic Policies & Azure AI Search** | 🟢 Complete | 8 versioned synthetic policy docs in `SeedPolicies/`, `PolicyIndexDocument` HNSW vector profile, `PolicyIndexer` embedding generation (`text-embedding-3-small`), `AzureAiSearchPolicyRetriever` hybrid vector RAG & active version filtering. |
 | **Slice 4** | **Document Upload & Extraction** | ⏳ Planned | Synthetic document upload flow, candidate field extraction, confidence scoring, provenance tracking, interactive low-confidence confirmation UI. |
 | **Slice 5** | **Typed Tools & MCP** | ⏳ Planned | Typed `IIdentityReader`, `IIncomeReader`, `ICreditReader` adapters backed by structured synthetic verification data, MCP Tool Server exposure. |
 | **Slice 6** | **Deterministic DTI & Eligibility** | ⏳ Planned | Enhanced domain rules, comprehensive synthetic dataset (12 applications), edge-case validation. |

@@ -37,3 +37,21 @@ Record of key architectural, technical, and implementation decisions for the pro
 - **Context**: Slice 2 requires replacing the keyword-matching stub with a real Azure OpenAI Chat Completion model adapter connected to Azure AI Foundry (`gpt-4o` / `gpt-4o-mini`).
 - **Decision**: Installed `Azure.AI.OpenAI` v2.1.0 (official Microsoft Azure SDK stable GA release). Created `AzureOpenAIChatModel` implementing `IChatModel` in `Loan.Infrastructure/AzureOpenAI/`. Configured endpoint, API key, deployment name, and embedding deployment name via ASP.NET Core User Secrets (`AzureOpenAI:Endpoint`, `AzureOpenAI:ApiKey`, `AzureOpenAI:DeploymentName`).
 - **Consequences**: Live AI chat completions and streaming via real Azure OpenAI API with explicit startup validation, supporting structured JSON completion and cancellation tokens.
+
+---
+
+## ADR-005: Azure AI Search Hybrid Vector RAG & Active Policy Version Filtering
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Policy retrieval requires hybrid keyword + 1536-dim vector search (`text-embedding-3-small`), strict active/effective version filtering, and structured citations.
+- **Decision**: Installed `Azure.Search.Documents` v11.6.0. Created `PolicyIndexDocument` with HNSW Cosine vector search profile. Built `PolicyIndexer` with idempotent `MergeOrUploadDocumentsAsync` batching and BOM-safe YAML frontmatter parsing (`EffectiveFrom`/`EffectiveTo`). Built `AzureAiSearchPolicyRetriever` implementing `IPolicyRetriever` with hybrid search, metadata filtering (`search.in(productId, ...)`), active version filtering (`isActive eq true`), hybrid RRF score thresholding (`score >= 0.0165`), and structured `CitationDto` generation.
+- **Consequences**: Active policies (v2.0) are selected over expired policies (v1.0), 0 duplicate chunks are created on repeated application starts, and irrelevant queries return 0 results to prevent hallucinations.
+
+---
+
+## ADR-006: Explicit Runtime Exceptions for Missing Cloud Configurations (Zero Silent Fallbacks)
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Release-gate review requires that production runtime must NOT silently fall back to synthetic/in-memory test data when Azure AI Search or Azure OpenAI configuration is missing.
+- **Decision**: Registered `AzureAiSearchPolicyRetriever` exclusively as `IPolicyRetriever` in production DI. In `AzureAiSearchPolicyRetriever`, missing credentials throw an explicit `InvalidOperationException` with clear guidance on setting User Secrets. `SyntheticPolicyRetriever` is reserved strictly for offline unit/contract/prompt/end-to-end tests.
+- **Consequences**: Prevents deceptive test mock data from serving end users in misconfigured production/staging environments.
