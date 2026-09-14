@@ -67,15 +67,26 @@ Record of key architectural, technical, and implementation decisions for the pro
 
 ---
 
-## ADR-010: Pure C# Deterministic Eligibility Engine, Status Precedence & Policy Reconciliation
+## ADR-011: Bounded Multi-Agent Specialist Framework, Deterministic Routing Overrides, and Tool Allow-Lists
 - **Date**: 2026-09-14
 - **Status**: Accepted
-- **Context**: Slice 6 requires deterministic DTI, LTV, and credit eligibility evaluation in `Loan.Domain`, strict 4-state status precedence (`PendingInformation`, `Ineligible`, `ReferToHuman`, `Eligible`), product-specific LTV applicability, zero/invalid input guards, and policy reconciliation with indexed RAG markdown documents.
+- **Context**: Slice 7 requires a multi-agent framework with specialist agents (`DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, `ComplianceReviewAgent`, `RecommendationOrchestratorAgent`), tool permission allow-lists, deterministic `RoutingState` and `RiskScore` overrides, and strict non-approval safety guarantees.
 - **Decision**:
-  - Implemented `EligibilityCalculator.cs` as a pure C# static domain service with zero LLM or cloud dependencies (**BR-01**, **BR-03**).
-  - Enforced zero/negative income guard (`income <= 0 => DebtToIncomeRatio = null, IsDtiEligible = false, Status = Ineligible`), avoiding false 100% ratio representations.
-  - Enforced product-specific LTV relevance via `ProductRules.RequiresPropertyValuation`. Unsecured Personal Loans (`LOAN-PERSONAL` v2.0) set `LoanToValueRatio = null` and `IsLtvEligible = true`. Mortgages (`MORTGAGE-STD` v1.2) set `RequiresPropertyValuation = true`.
-  - Implemented explicit status evaluation order: `PendingInformation` (missing mandatory evidence) -> `Ineligible` (invalid inputs or credit/income/loan amount hard rule failure) -> `ReferToHuman` (DTI or LTV exception eligible for manual loan officer review) -> `Eligible` (all rules pass).
-  - Enforced verified vs. stated fact precedence (`ApplicantFacts.EffectiveMonthlyIncome` & `EffectiveCreditScore`) prioritizing verified values (**BR-02**).
-  - Reconciled `ProductRules` factory thresholds (`Mortgage` v1.2: DTI 43%, LTV 80%, Credit 640; `Personal Loan` v2.0: DTI 38%, Credit 600, Min Income $2.5k) with effective RAG policy markdown guides (`DOC-MORTGAGE-V12`, `DOC-PERSONAL-V2`).
-- **Consequences**: Guarantees zero LLM arithmetic hallucinations, strict mathematical precision, and full alignment between domain rules and compliance documentation across all 12 synthetic application scenarios.
+  - Implemented 4 bounded specialist agents in `Loan.Application.Agents`.
+  - Implemented explicit tool permission allow-lists: Document agent reads candidate fields; Eligibility agent reads immutable domain indicators; Compliance agent executes `IPolicyRetriever` RAG searches; Orchestrator agent calls `SaveRecommendationDraftCommandHandler`.
+  - **Deterministic Routing & Risk Score Enforcement**: `RoutingState` and `RiskScore` are owned and assigned by the system derived directly from `EligibilityIndicators.Status` (`PendingInformation` -> `0.50`, `ReferToHuman` / `Ineligible` -> `0.65`/`0.85`, `Eligible` -> `0.15`). Any LLM mismatch is automatically overridden before persistence.
+  - **Non-Approval Safety Boundary**: Orchestrator agent CANNOT issue `Approve` or `Reject` decisions, lock interest rates, or disburse funds. Recommendation drafts are saved exclusively in `DraftPreparedBySystem` status (**BR-07**).
+- **Consequences**: Enables multi-agent collaboration with structured LLM reasoning summaries while guaranteeing zero numerical financial drift, strict tool authorization, and loan officer exclusivity for final status changes.
+
+---
+
+## ADR-012: Loan Officer Decision Exclusivity, Immutable Audit Trail, and SSE Streaming
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Slice 8 requires human-in-the-loop loan officer review interface, Server-Sent Events (SSE) streaming for multi-agent draft progress, strict Loan Officer exclusivity (**BR-07**), and immutable audit trail logging.
+- **Decision**:
+  - Implemented `StreamRecommendationDraft` endpoint in `OfficerController.cs` returning `text/event-stream` for live agent token streaming.
+  - Enforced **BR-07 Exclusivity**: System agents produce status `DraftPreparedBySystem` only. Final status transitions (`Approved`, `Rejected`, `InformationRequested`) require authorized Loan Officer submission via `OfficerDecisionCommandHandler` with mandatory non-empty decision notes.
+  - Implemented append-only immutable audit trail recording (`RecommendationAuditEntry` and `FieldOverrideAuditEntry`) rendered in `Review.cshtml` timeline.
+- **Consequences**: Ensures 100% compliance with human-in-the-loop regulatory standards and full inspectability of application state changes.
+

@@ -59,13 +59,23 @@
 - [x] Add `SyntheticApplicationScenarioTests.cs` validating all 12 canonical synthetic application scenarios (`SYN-888777` through `SYN-000000`).
 - [x] Verify full solution test suite passing (76/76 tests passing).
 
-### Slice 7: Bounded Multi-Agent Orchestration
-- [ ] Implement Document Agent, Eligibility Agent, and Compliance Agent.
-- [ ] Orchestrate schema-valid `RecommendationDraft` generation.
+### Slice 7: Bounded Multi-Agent Specialist Framework & Orchestration
+- [x] Implement `AgentModels.cs` and versioned `AgentPrompts.cs` (`AgentPrompts_v1.0.cs`).
+- [x] Implement `DocumentAnalysisAgent` for inspecting document metadata, extracted field confidence scores ($<0.85$), and unconfirmed status.
+- [x] Implement `EligibilityAnalysisAgent` for explaining financial factors by consuming immutable C# `EligibilityIndicators` from `Loan.Domain` without LLM ratio recalculation.
+- [x] Implement `ComplianceReviewAgent` for RAG policy searches via `IPolicyRetriever`, grounding assertions in versioned citations.
+- [x] Implement `RecommendationOrchestratorAgent` for synthesizing specialist outputs, enforcing deterministic `RoutingState` and `RiskScore` overrides, and saving draft recommendations via `SaveRecommendationDraftCommandHandler`.
+- [x] Register Slice 7 specialist agents and orchestrator in `DependencyInjection.cs`.
+- [x] Add `MultiAgentOrchestrationTests.cs` testing agent boundaries, immutability of domain indicators, routing state overrides, and end-to-end multi-agent orchestration across all 12 synthetic scenarios.
+- [x] Verify full solution test suite passing (81/81 tests passing).
 
-### Slice 8: Officer Review & Audit Trail
-- [ ] Wire controlled status transitions for officer approval/rejection/return.
-- [ ] Display audit history timeline in UI.
+### Slice 8: Officer Review, Decision Enforcement, Audit Trail & MVC Streaming Integration
+- [x] Implement `StreamRecommendationDraft` Server-Sent Events (SSE) streaming endpoint in `OfficerController.cs` for live multi-agent draft progress monitoring.
+- [x] Enforce **BR-07 Loan Officer Exclusivity**: System agents and LLMs produce status `DraftPreparedBySystem` only; final status transitions (`Approved`, `Rejected`, `InformationRequested`) require authorized Loan Officer execution with mandatory decision notes.
+- [x] Build interactive Officer Review UI in `Officer/Review.cshtml` with facts & ratio display, AI safety non-approval disclaimer, grounded policy citations, and live SSE streaming logs.
+- [x] Render append-only immutable audit trail timeline in `Review.cshtml` tracking `DraftPrepared`, `FieldConfirmed`, `FieldOverridden`, `OfficerApproved`, `OfficerRejected`, and `ReturnedForInfo` events.
+- [x] Add unit and integration tests in `OfficerDecisionHandlerTests.cs` and `WebRoutesEndToEndTests.cs` verifying decision transitions, invalid state rejection, and audit trail generation.
+- [x] Verify full solution test suite passing (98/98 tests passing across all 6 test projects).
 
 ### Slice 9: Security, Privacy & Prompt Refusal
 - [ ] Add sensitive data masking.
@@ -73,3 +83,4 @@
 
 ### Slice 10: Telemetry, Evaluation Runner & Resilience
 - [ ] Implement 20 evaluation prompt runner & health metrics.
+

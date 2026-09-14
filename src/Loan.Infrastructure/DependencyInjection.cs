@@ -49,6 +49,12 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Application.Recommendations.SaveRecommendationDraftCommandHandler>();
         services.AddScoped<MCP.McpToolServer>();
 
+        // Register Slice 7 Multi-Agent Specialist Framework
+        services.AddScoped<Application.Agents.DocumentAnalysisAgent>();
+        services.AddScoped<Application.Agents.EligibilityAnalysisAgent>();
+        services.AddScoped<Application.Agents.ComplianceReviewAgent>();
+        services.AddScoped<Application.Agents.RecommendationOrchestratorAgent>();
+
         return services;
     }
 

@@ -4,6 +4,8 @@
     ViewData["Title"] = $"Review Application {Model.ApplicationId}";
     var rec = Model.CurrentRecommendation;
     var ind = Model.Indicators;
+    var isClosed = Model.Status == Loan.Domain.Applications.ApplicationStatus.Approved ||
+                   Model.Status == Loan.Domain.Applications.ApplicationStatus.Rejected;
 }
 
 <div class="page-header">
@@ -11,7 +13,22 @@
         <h1 class="page-title">Application Review: @Model.ApplicationId</h1>
         <p class="page-subtitle">Applicant: <strong>@Model.Facts.FullName</strong> (Synthetic ID: <code>@Model.Facts.SyntheticId</code>)</p>
     </div>
-    <span class="badge badge-warning">Status: @Model.Status</span>
+    <div>
+        <span class="badge @(Model.Status == Loan.Domain.Applications.ApplicationStatus.Approved ? "badge-success" : Model.Status == Loan.Domain.Applications.ApplicationStatus.Rejected ? "badge-danger" : "badge-warning")">
+            Status: @Model.Status
+        </span>
+    </div>
+</div>
+
+<!-- SSE Live Specialist Agent Multi-Agent Streaming Panel -->
+<div id="agentStreamPanel" class="card" style="margin-bottom: 1.5rem; border: 1px solid var(--color-primary-border); background: var(--color-primary-bg); display: none;">
+    <div class="card-header">
+        <h2 class="card-title" style="font-size: 1rem;">⚡ Live Specialist Multi-Agent Execution</h2>
+        <span id="agentStreamBadge" class="badge badge-info">Executing...</span>
+    </div>
+    <div id="agentStreamLog" style="font-family: var(--font-mono, monospace); font-size: 0.85rem; padding: 0.75rem; background: rgba(0,0,0,0.05); border-radius: 4px; max-height: 150px; overflow-y: auto; color: var(--text-color);">
+        Connecting to agent stream...
+    </div>
 </div>
 
 <!-- Side-by-Side Review Split Grid (Flow C) -->
@@ -88,7 +105,7 @@
         <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">Calculated Deterministic Ratios:</h3>
         @if (ind != null)
         {
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                     <div style="font-size: 0.8rem; color: var(--text-muted);">Debt-to-Income (DTI)</div>
                     <div style="font-size: 1.5rem; font-weight: 700; color: @(ind.IsDtiEligible ? "var(--color-success)" : "var(--color-danger)");">
@@ -106,6 +123,55 @@
                 </div>
             </div>
         }
+
+        <!-- Immutable Audit Trail Timeline -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">📜 Immutable Audit Trail</h3>
+            <div style="max-height: 250px; overflow-y: auto;">
+                <table class="table" style="font-size: 0.8rem;">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Actor</th>
+                            <th>Timestamp (UTC)</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (rec != null && rec.AuditTrail.Any())
+                        {
+                            foreach (var audit in rec.AuditTrail)
+                            {
+                                <tr>
+                                    <td><span class="badge badge-info">@audit.Action</span></td>
+                                    <td><code>@audit.PerformedBy</code></td>
+                                    <td>@audit.TimestampUtc.ToString("u")</td>
+                                    <td>@audit.Notes</td>
+                                </tr>
+                            }
+                        }
+                        @if (Model.DocumentAuditTrail.Any())
+                        {
+                            foreach (var docAudit in Model.DocumentAuditTrail)
+                            {
+                                <tr>
+                                    <td><span class="badge badge-warning">@docAudit.Action (@docAudit.FieldName)</span></td>
+                                    <td><code>@docAudit.ActorId</code> (@docAudit.ActorRole)</td>
+                                    <td>@docAudit.TimestampUtc.ToString("u")</td>
+                                    <td>@docAudit.Reason</td>
+                                </tr>
+                            }
+                        }
+                        @if ((rec == null || !rec.AuditTrail.Any()) && !Model.DocumentAuditTrail.Any())
+                        {
+                            <tr>
+                                <td colspan="4" style="color: var(--text-muted); text-align: center;">No audit log events recorded yet.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Right Column: System Recommendation Draft, Citations, Policy Violations, & Officer Action -->
@@ -122,6 +188,11 @@
 
         @if (rec != null)
         {
+            <!-- Non-Approval Guarantee Disclaimer -->
+            <div style="background: var(--color-warning-bg, #fffbeb); border: 1px solid var(--color-warning-border, #fef3c7); padding: 0.75rem 1rem; border-radius: var(--radius-sm, 4px); margin-bottom: 1.25rem; font-size: 0.8rem; color: #92400e;">
+                <strong>🛡️ AI Safety Guardrail:</strong> @Loan.Application.Agents.RecommendationOrchestratorAgent.NonApprovalDisclaimer
+            </div>
+
             <div style="margin-bottom: 1.5rem;">
                 <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">Summary Reasoning:</h3>
                 <p style="font-size: 0.95rem; line-height: 1.6; margin-top: 0.25rem;">@rec.SummaryReasoning</p>
@@ -133,6 +204,19 @@
                     <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--color-warning); margin-bottom: 0.35rem;">⚠️ Missing Evidence Items (BR-06):</h4>
                     <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: #92400e;">
                         @foreach (var item in rec.MissingEvidenceItems)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (rec.PolicyViolations.Any())
+            {
+                <div class="card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--color-danger); margin-bottom: 0.35rem;">🛑 Policy Exceptions & Violations:</h4>
+                    <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--color-danger);">
+                        @foreach (var item in rec.PolicyViolations)
                         {
                             <li>@item</li>
                         }
@@ -158,20 +242,87 @@
         <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
             <h3 style="font-size: 1rem; font-weight: 700; color: var(--color-secondary); margin-bottom: 0.75rem;">⚖️ Authorized Officer Decision (BR-07)</h3>
 
-            <form asp-action="SubmitDecision" method="post">
-                <input type="hidden" name="id" value="@Model.ApplicationId" />
-
-                <div class="form-group">
-                    <label class="form-label" for="notesInput">Officer Decision Notes & Justification:</label>
-                    <textarea id="notesInput" name="notes" class="form-control" rows="3" placeholder="Enter decision notes, exception rationale, or info requested..." required></textarea>
+            @if (isClosed)
+            {
+                <div style="padding: 1rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <p style="margin: 0; font-weight: 600; color: var(--text-muted);">
+                        This application is closed with status: <span class="badge @(Model.Status == Loan.Domain.Applications.ApplicationStatus.Approved ? "badge-success" : "badge-danger")">@Model.Status</span>
+                    </p>
+                    @if (rec?.ApprovedByOfficerId != null)
+                    {
+                        <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">
+                            Decision by Officer <code>@rec.ApprovedByOfficerId</code> on @rec.ApprovedAtUtc?.ToString("g") UTC
+                        </p>
+                        <p style="font-size: 0.85rem; font-style: italic; color: var(--text-color);">
+                            Notes: "@rec.OfficerDecisionNotes"
+                        </p>
+                    }
                 </div>
+            }
+            else
+            {
+                <form asp-action="SubmitDecision" method="post">
+                    <input type="hidden" name="id" value="@Model.ApplicationId" />
 
-                <div style="display: flex; gap: 0.75rem;">
-                    <button type="submit" name="action" value="@RecommendationStatus.ApprovedByOfficer" class="btn btn-success">Approve Application</button>
-                    <button type="submit" name="action" value="@RecommendationStatus.ReturnedForInfo" class="btn btn-secondary">Request Information</button>
-                    <button type="submit" name="action" value="@RecommendationStatus.RejectedByOfficer" class="btn btn-danger">Reject Application</button>
-                </div>
-            </form>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" for="officerIdInput">Officer ID / Employee Badge:</label>
+                        <input type="text" id="officerIdInput" name="officerId" class="form-control" value="OFFICER-42" required />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" for="notesInput">Officer Decision Notes & Justification (Mandatory):</label>
+                        <textarea id="notesInput" name="notes" class="form-control" rows="3" placeholder="Enter decision notes, exception rationale, or info requested..." required></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button type="submit" name="action" value="@RecommendationStatus.ApprovedByOfficer" class="btn btn-success">Approve Application</button>
+                        <button type="submit" name="action" value="@RecommendationStatus.ReturnedForInfo" class="btn btn-secondary">Request Information</button>
+                        <button type="submit" name="action" value="@RecommendationStatus.RejectedByOfficer" class="btn btn-danger">Reject Application</button>
+                    </div>
+                </form>
+            }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Optional SSE trigger if agent stream button or auto-stream is enabled
+            var appId = '@Model.ApplicationId';
+            var streamPanel = document.getElementById('agentStreamPanel');
+            var streamLog = document.getElementById('agentStreamLog');
+            var streamBadge = document.getElementById('agentStreamBadge');
+
+            if (window.location.search.includes('stream=true')) {
+                streamPanel.style.display = 'block';
+                var eventSource = new EventSource('/Officer/StreamRecommendationDraft?id=' + appId);
+
+                eventSource.addEventListener('DocumentAgent', function (e) {
+                    streamLog.innerHTML += '<div>[DocAgent] ' + e.data + '</div>';
+                });
+                eventSource.addEventListener('EligibilityAgent', function (e) {
+                    streamLog.innerHTML += '<div>[EligAgent] ' + e.data + '</div>';
+                });
+                eventSource.addEventListener('ComplianceAgent', function (e) {
+                    streamLog.innerHTML += '<div>[CompAgent] ' + e.data + '</div>';
+                });
+                eventSource.addEventListener('Orchestrator', function (e) {
+                    streamLog.innerHTML += '<div>[Orchestrator] ' + e.data + '</div>';
+                });
+                eventSource.addEventListener('Complete', function (e) {
+                    streamLog.innerHTML += '<div style="color: var(--color-success); font-weight: bold;">[Complete] Recommendation Draft saved! Reloading view...</div>';
+                    streamBadge.innerText = 'Completed';
+                    streamBadge.className = 'badge badge-success';
+                    eventSource.close();
+                    setTimeout(function() { window.location.href = '/Officer/Review/' + appId; }, 1000);
+                });
+                eventSource.onerror = function (e) {
+                    streamLog.innerHTML += '<div style="color: var(--color-danger);">[Error] Stream closed.</div>';
+                    eventSource.close();
+                };
+            }
+        });
+    </script>
+}
+

@@ -2,6 +2,30 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 8 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Officer Review, Decision Enforcement, Audit Trail & MVC Streaming Integration (`Loan.Web.Controllers`, `Loan.Domain`)**:
+  - Implemented `StreamRecommendationDraft` Server-Sent Events (SSE) streaming endpoint in `OfficerController.cs` for live multi-agent draft progress monitoring (`text/event-stream`).
+  - Enforced **BR-07 Loan Officer Exclusivity**: System agents and LLMs produce status `DraftPreparedBySystem` only; final status transitions (`Approved`, `Rejected`, `InformationRequested`) require authorized Loan Officer execution with mandatory decision notes.
+  - Built interactive Officer Review UI in `Officer/Review.cshtml` with facts & ratio display, AI safety non-approval disclaimer, grounded policy citations, live SSE streaming logs, and decision submission form.
+  - Rendered append-only immutable audit trail timeline in `Review.cshtml` tracking `DraftPrepared`, `FieldConfirmed`, `FieldOverridden`, `OfficerApproved`, `OfficerRejected`, and `ReturnedForInfo` events.
+  - Added unit and integration tests in `OfficerDecisionHandlerTests.cs` and `WebRoutesEndToEndTests.cs` verifying decision transitions, rejection/return paths, invalid state rejection, and audit trail generation.
+- Total tests passing: **98/98 tests passing** across all 6 test projects.
+
+## [Slice 7 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Bounded Multi-Agent Specialist Framework & Orchestration (`Loan.Application.Agents`)**:
+  - Implemented `DocumentAnalysisAgent` for evaluating candidate extracted fields, document health, and low-confidence flags ($<0.85$).
+  - Implemented `EligibilityAnalysisAgent` for explaining financial risk factors. Crucially consumes immutable `EligibilityIndicators` computed by pure C# in `Loan.Domain` without LLM numerical ratio recalculation.
+  - Implemented `ComplianceReviewAgent` for RAG policy searches via `IPolicyRetriever`, generating grounded citations (`DocumentTitle`, `PolicyVersion`, `SectionOrPage`, `Excerpt`).
+  - Implemented `RecommendationOrchestratorAgent` synthesizing specialist outputs into a `RecommendationDraft`. Enforces deterministic system overrides for `RoutingState` (`PendingInformation`, `ManualReview`, `ReadyForOfficerReview`) and `RiskScore` (0.15 - 0.85) derived directly from `EligibilityIndicators.Status`.
+  - Enforced strict non-approval safety guarantees: Orchestrator agent CANNOT create `Approve` or `Reject` decisions, price loans, or disburse funds (**BR-07** - Loan Officer exclusivity for final status decisions).
+  - Saved recommendations via `SaveRecommendationDraftCommandHandler` in `DraftPreparedBySystem` status with full audit logging.
+  - Added `MultiAgentOrchestrationTests.cs` verifying agent boundaries, immutable domain indicators, routing state overrides, and end-to-end multi-agent orchestration across all 12 synthetic scenarios.
+- Total tests passing: **81/81 tests passing** across all 6 test projects.
+
 ## [Slice 6 Release Gate Passed] - 2026-09-14
 
 ### Added & Verified

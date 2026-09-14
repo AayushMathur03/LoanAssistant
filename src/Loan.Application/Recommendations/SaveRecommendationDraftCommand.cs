@@ -13,6 +13,7 @@ public record SaveRecommendationDraftCommand(
     List<string>? UnresolvedItems = null,
     List<string>? PolicyExceptions = null,
     List<CitationInput>? Citations = null,
+    double? RiskScore = null,
     string ActorId = "SystemWorker",
     string ActorRole = "SystemWorker");
 
@@ -72,13 +73,15 @@ public class SaveRecommendationDraftCommandHandler
             .Select(c => new RecommendationCitation(c.DocumentTitle, c.PolicyVersion, c.SectionOrPage, c.Excerpt))
             .ToList();
 
+        var calculatedRisk = command.RiskScore ?? (exceptions.Count > 0 ? 0.65 : (unresolved.Count > 0 ? 0.50 : 0.15));
+
         var recId = $"REC-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
         var now = DateTime.UtcNow;
 
         var rec = new Recommendation(
             recommendationId: recId,
             decisionRecommendation: recType,
-            riskScore: exceptions.Count > 0 ? 0.65 : (unresolved.Count > 0 ? 0.50 : 0.15),
+            riskScore: calculatedRisk,
             summaryReasoning: command.SummaryReasoning,
             citations: citations,
             policyViolations: exceptions,

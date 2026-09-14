@@ -79,7 +79,14 @@ public class WebRoutesEndToEndTests
     [Test]
     public async Task OfficerController_IndexAndReview_ShouldReturnViewResults()
     {
-        var controller = new OfficerController(_appRepo, _draftHandler, _decisionHandler);
+        var chatModel = new SyntheticChatModel();
+        var policyRetriever = new SyntheticPolicyRetriever();
+        var docAgent = new Loan.Application.Agents.DocumentAnalysisAgent(chatModel);
+        var eligAgent = new Loan.Application.Agents.EligibilityAnalysisAgent(chatModel);
+        var compAgent = new Loan.Application.Agents.ComplianceReviewAgent(policyRetriever, chatModel);
+        var orchestrator = new Loan.Application.Agents.RecommendationOrchestratorAgent(docAgent, eligAgent, compAgent, _saveDraftHandler, chatModel);
+
+        var controller = new OfficerController(_appRepo, _draftHandler, _decisionHandler, orchestrator);
         var indexResult = await controller.Index() as ViewResult;
         Assert.That(indexResult, Is.Not.Null);
 
