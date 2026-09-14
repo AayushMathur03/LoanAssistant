@@ -33,6 +33,19 @@ public class AskProductQuestionQueryHandler
             throw new ArgumentException("Question cannot be empty.", nameof(query));
         }
 
+        const string disclaimer = "Disclaimer: Product explanations are for informational purposes only and do NOT constitute a loan commitment, rate lock, or pre-approval decision.";
+
+        // Prompt Injection Defense Check
+        if (Loan.Application.Common.PromptInjectionGuard.IsInjectionAttempt(query.Question))
+        {
+            return new ProductAdviceResponseDto(
+                Answer: Loan.Application.Common.PromptInjectionGuard.RefusalMessage,
+                Citations: Array.Empty<CitationDto>(),
+                EffectivePolicyVersion: query.PolicyVersion ?? "v1.0",
+                HasSufficientEvidence: false,
+                NonApprovalDisclaimer: disclaimer);
+        }
+
         // 1. Retrieve policy content from RAG retriever
         var searchResults = (await _policyRetriever.SearchPolicyAsync(
             query: query.Question,
@@ -40,8 +53,6 @@ public class AskProductQuestionQueryHandler
             effectiveVersion: query.PolicyVersion,
             topK: 3,
             cancellationToken: cancellationToken)).ToList();
-
-        const string disclaimer = "Disclaimer: Product explanations are for informational purposes only and do NOT constitute a loan commitment, rate lock, or pre-approval decision.";
 
         if (!searchResults.Any())
         {

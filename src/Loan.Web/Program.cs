@@ -17,16 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MVC services to the container.
 builder.Services.AddControllersWithViews();
 
-// Register Infrastructure Persistence Repositories via Infrastructure Composition Extension
+// Register Infrastructure Persistence Repositories & Tools via Composition Extension
 builder.Services.AddInfrastructurePersistence(builder.Configuration);
-
-// Register Infrastructure Adapters & Tools
-builder.Services.AddSingleton<IIdentityReader, SyntheticIdentityService>();
-builder.Services.AddSingleton<IIncomeReader, SyntheticIncomeService>();
-builder.Services.AddSingleton<ICreditReader, SyntheticCreditService>();
-builder.Services.AddSingleton<IPolicyRetriever, SyntheticPolicyRetriever>();
-builder.Services.AddSingleton<IDocumentExtractor, SyntheticDocumentExtractor>();
-builder.Services.AddSingleton<McpToolServer>();
 
 // Register Application CQRS Handlers
 builder.Services.AddTransient<AskProductQuestionQueryHandler>();

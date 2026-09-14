@@ -90,3 +90,17 @@ Record of key architectural, technical, and implementation decisions for the pro
   - Implemented append-only immutable audit trail recording (`RecommendationAuditEntry` and `FieldOverrideAuditEntry`) rendered in `Review.cshtml` timeline.
 - **Consequences**: Ensures 100% compliance with human-in-the-loop regulatory standards and full inspectability of application state changes.
 
+---
+
+## ADR-013: Security, Privacy, PII Masking, and Prompt Refusal Engine
+- **Date**: 2026-09-14
+- **Status**: Accepted
+- **Context**: Slice 9 requires sensitive PII redaction, prompt injection defense, short-circuit refusal responses, and cross-application tenant isolation.
+- **Decision**:
+  - Implemented `PiiMasker` in `Loan.Application.Common` redacting SSNs (`***-**-1234`), account numbers (`******1234`), and emails.
+  - Implemented `PromptInjectionGuard` in `Loan.Application.Common` checking keywords (`"SYSTEM OVERRIDE"`, `"IGNORE PREVIOUS INSTRUCTIONS"`, `"PRINT SYSTEM PROMPT"`) and regex patterns.
+  - Short-circuited `AskProductQuestionQueryHandler` with standardized refusal response when injection attempt is detected, skipping RAG retrieval and LLM processing.
+  - Enforced server-side application isolation across MCP server tools and document override commands.
+- **Consequences**: Ensures PII protection, zero system prompt leakage, and automated refusal of malicious prompt injection attacks.
+
+

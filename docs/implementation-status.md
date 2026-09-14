@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 8 - Loan Officer Review, Decision Enforcement, Audit Trail & MVC Streaming Integration (COMPLETED & VERIFIED)
+- **Current Phase**: Slice 9 - Security, Privacy & Prompt Refusal Suite (COMPLETED & VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (98 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
-- **Officer Review & Audit Status**: Human-in-the-loop loan officer review interface operational (`OfficerController` & `Review.cshtml`), Server-Sent Events (SSE) streaming endpoint for live agent draft progress, **BR-07** officer exclusivity enforcement, and immutable append-only audit trail logging.
+- **Test Status**: 100% Passing (106 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
+- **Security & Privacy Status**: PII masking (`PiiMasker.cs`), prompt injection defense (`PromptInjectionGuard.cs`), short-circuit refusal responses, server-side cross-application tenant isolation, and prompt refusal dataset operational.
 
 ---
 
@@ -25,7 +25,7 @@
 | **Slice 6** | **Deterministic DTI & Eligibility** | 🟢 Complete & Verified | Pure C# deterministic calculator in `Loan.Domain`, product-specific LTV applicability (mortgage vs personal loan), zero/invalid income guard (returns `null` ratio + `Ineligible`), verified vs stated fact precedence (**BR-02**, **BR-03**), exact boundary threshold tests, and 12 synthetic scenario test runner. |
 | **Slice 7** | **Bounded Multi-Agent Orchestration** | 🟢 Complete & Verified | 4 specialist agents (`DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, `ComplianceReviewAgent`, `RecommendationOrchestratorAgent`), tool permission allow-lists, deterministic `RoutingState` & `RiskScore` overrides, grounded RAG citations, safe `save_draft` persistence. |
 | **Slice 8** | **Officer Review & Audit Trail** | 🟢 Complete & Verified | Server-Sent Events (SSE) streaming endpoint (`StreamRecommendationDraft`), **BR-07** Loan Officer exclusivity enforcement for `Approved`/`Rejected`/`InformationRequested` decisions, interactive review view (`Review.cshtml`), AI safety disclaimer, and immutable audit log timeline. |
-| **Slice 9** | **Security & Prompt Refusal** | ⏳ Planned | Data masking & prompt injection refusal suite. |
+| **Slice 9** | **Security & Prompt Refusal** | 🟢 Complete & Verified | `PiiMasker` SSN/Account/Email redaction, `PromptInjectionGuard` keyword/pattern detection, short-circuit refusal responses, cross-tenant application isolation, and NUnit security test suite (106 tests passing). |
 | **Slice 10** | **Telemetry, Evaluation & Resilience** | ⏳ Planned | 20 evaluation prompt runner & health metrics. |
 
 ---

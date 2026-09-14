@@ -2,6 +2,18 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 9 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Security, Privacy & Prompt Refusal Suite (`Loan.Application.Common`, `Loan.PromptTests`)**:
+  - Implemented `PiiMasker.cs` utility redacting SSNs (`***-**-1234`), Bank Account Numbers (`******1234`), and Email Addresses before forwarding prompts or persisting log output.
+  - Implemented `PromptInjectionGuard.cs` for scanning user inputs and candidate document snippets for injection patterns (`"SYSTEM OVERRIDE"`, `"IGNORE PREVIOUS INSTRUCTIONS"`, `"PRINT SYSTEM PROMPT"`, `"SET STATUS APPROVED"`).
+  - Integrated `PromptInjectionGuard` into `AskProductQuestionQueryHandler.cs`, short-circuiting injection attempts with standardized security refusal message (*"Refusal: The request contains unauthorized instructions attempting to override system governance or policy rules..."*).
+  - Added unit test suite `PiiMaskerTests.cs` verifying SSN, account number, and email redaction logic.
+  - Added unit test suite `CrossApplicationIsolationTests.cs` verifying server-side tenant scoping security across MCP tools and document field override commands.
+  - Expanded `PromptEvaluationDataset.cs` in `Loan.PromptTests` with 4 new security refusal prompt test cases (`PROMPT-004` through `PROMPT-007`).
+- Total tests passing: **106/106 tests passing** across all 6 test projects.
+
 ## [Slice 8 Release Gate Passed] - 2026-09-14
 
 ### Added & Verified

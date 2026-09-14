@@ -77,10 +77,13 @@
 - [x] Add unit and integration tests in `OfficerDecisionHandlerTests.cs` and `WebRoutesEndToEndTests.cs` verifying decision transitions, invalid state rejection, and audit trail generation.
 - [x] Verify full solution test suite passing (98/98 tests passing across all 6 test projects).
 
-### Slice 9: Security, Privacy & Prompt Refusal
-- [ ] Add sensitive data masking.
-- [ ] Expand prompt injection refusal test suite.
+### Slice 9: Security, Privacy & Prompt Refusal Suite
+- [x] Implement `PiiMasker.cs` for redacting SSNs (`***-**-1234`), Account Numbers (`******1234`), and Email Addresses before forwarding prompts or persisting logs.
+- [x] Implement `PromptInjectionGuard.cs` scanning queries for jailbreak, override, and system prompt extraction attacks (`"SYSTEM OVERRIDE"`, `"IGNORE PREVIOUS INSTRUCTIONS"`, `"PRINT SYSTEM PROMPT"`).
+- [x] Integrate prompt injection defense in `AskProductQuestionQueryHandler.cs` short-circuiting with standardized security refusal message.
+- [x] Verify cross-application tenant isolation server-side in `McpToolServer.cs` and document field override commands.
+- [x] Add unit & prompt test suites (`PiiMaskerTests.cs`, `CrossApplicationIsolationTests.cs`, expanded `PromptEvaluationDataset.cs`).
+- [x] Verify full solution test suite passing (106/106 tests passing across all 6 test projects).
 
 ### Slice 10: Telemetry, Evaluation Runner & Resilience
 - [ ] Implement 20 evaluation prompt runner & health metrics.
-
