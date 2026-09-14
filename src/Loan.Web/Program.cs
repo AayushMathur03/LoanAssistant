@@ -26,7 +26,6 @@ builder.Services.AddSingleton<IIncomeReader, SyntheticIncomeService>();
 builder.Services.AddSingleton<ICreditReader, SyntheticCreditService>();
 builder.Services.AddSingleton<IPolicyRetriever, SyntheticPolicyRetriever>();
 builder.Services.AddSingleton<IDocumentExtractor, SyntheticDocumentExtractor>();
-builder.Services.AddSingleton<IChatModel, SyntheticChatModel>();
 builder.Services.AddSingleton<McpToolServer>();
 
 // Register Application CQRS Handlers

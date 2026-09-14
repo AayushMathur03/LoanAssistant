@@ -24,6 +24,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ILoanApplicationRepository, SqlLoanApplicationRepository>();
         services.AddScoped<IRecommendationRepository, SqlRecommendationRepository>();
 
+        // Register Azure OpenAI Chat Model
+        services.AddSingleton<IChatModel, AzureOpenAI.AzureOpenAIChatModel>();
+
         return services;
     }
 
