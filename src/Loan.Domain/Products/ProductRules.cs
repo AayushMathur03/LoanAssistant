@@ -14,6 +14,7 @@ public class ProductRules
     public Money MaxLoanAmount { get; }
     public bool RequiresIncomeVerification { get; }
     public bool RequiresIdentityVerification { get; }
+    public bool RequiresPropertyValuation { get; }
 
     public ProductRules(
         string productId,
@@ -25,7 +26,8 @@ public class ProductRules
         Money minMonthlyIncome,
         Money maxLoanAmount,
         bool requiresIncomeVerification = true,
-        bool requiresIdentityVerification = true)
+        bool requiresIdentityVerification = true,
+        bool requiresPropertyValuation = true)
     {
         if (string.IsNullOrWhiteSpace(productId)) throw new ArgumentException("Product ID is required.", nameof(productId));
         if (string.IsNullOrWhiteSpace(productName)) throw new ArgumentException("Product Name is required.", nameof(productName));
@@ -44,9 +46,10 @@ public class ProductRules
         MaxLoanAmount = maxLoanAmount;
         RequiresIncomeVerification = requiresIncomeVerification;
         RequiresIdentityVerification = requiresIdentityVerification;
+        RequiresPropertyValuation = requiresPropertyValuation;
     }
 
-    public static ProductRules CreateStandardMortgage(string version = "v1.0") => new(
+    public static ProductRules CreateStandardMortgage(string version = "v1.2") => new(
         productId: "MORTGAGE-STD",
         productName: "Standard Residential Mortgage",
         effectiveVersion: version,
@@ -54,19 +57,23 @@ public class ProductRules
         maxLtvRatio: 0.80m,
         minCreditScore: 640,
         minMonthlyIncome: new Money(3000m),
-        maxLoanAmount: new Money(750000m)
+        maxLoanAmount: new Money(750000m),
+        requiresIncomeVerification: true,
+        requiresIdentityVerification: true,
+        requiresPropertyValuation: true
     );
 
-    public static ProductRules CreatePersonalLoan(string version = "v1.0") => new(
+    public static ProductRules CreatePersonalLoan(string version = "v2.0") => new(
         productId: "LOAN-PERSONAL",
         productName: "Personal Loan",
         effectiveVersion: version,
-        maxDtiRatio: 0.36m,
+        maxDtiRatio: 0.38m,
         maxLtvRatio: 1.00m,
-        minCreditScore: 620,
-        minMonthlyIncome: new Money(2000m),
-        maxLoanAmount: new Money(50000m),
+        minCreditScore: 600,
+        minMonthlyIncome: new Money(2500m),
+        maxLoanAmount: new Money(75000m),
         requiresIncomeVerification: true,
-        requiresIdentityVerification: true
+        requiresIdentityVerification: true,
+        requiresPropertyValuation: false
     );
 }

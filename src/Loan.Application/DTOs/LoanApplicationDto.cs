@@ -19,8 +19,8 @@ public record ApplicantFactsDto(
     bool IsCreditVerified);
 
 public record EligibilityIndicatorsDto(
-    decimal DebtToIncomeRatio,
-    decimal LoanToValueRatio,
+    decimal? DebtToIncomeRatio,
+    decimal? LoanToValueRatio,
     bool IsDtiEligible,
     bool IsLtvEligible,
     bool IsCreditScoreEligible,

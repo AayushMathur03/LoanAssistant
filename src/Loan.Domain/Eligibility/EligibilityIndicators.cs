@@ -3,15 +3,16 @@ namespace Loan.Domain.Eligibility;
 public enum EligibilityStatus
 {
     NotEvaluated,
-    Eligible,
+    PendingInformation,
+    Ineligible,
     ReferToHuman,
-    Ineligible
+    Eligible
 }
 
 public class EligibilityIndicators
 {
-    public decimal DebtToIncomeRatio { get; }      // DTI = Total Monthly Debts / Monthly Income
-    public decimal LoanToValueRatio { get; }       // LTV = Requested Loan Amount / Property Value
+    public decimal? DebtToIncomeRatio { get; }      // DTI = Total Monthly Debts / Monthly Income (null if income <= 0)
+    public decimal? LoanToValueRatio { get; }       // LTV = Requested Loan Amount / Property Value (null if product does not require property valuation or property value <= 0)
     
     public bool IsDtiEligible { get; }
     public bool IsLtvEligible { get; }
@@ -28,8 +29,8 @@ public class EligibilityIndicators
     public DateTime EvaluatedAtUtc { get; }
 
     public EligibilityIndicators(
-        decimal debtToIncomeRatio,
-        decimal loanToValueRatio,
+        decimal? debtToIncomeRatio,
+        decimal? loanToValueRatio,
         bool isDtiEligible,
         bool isLtvEligible,
         bool isCreditScoreEligible,
@@ -42,8 +43,8 @@ public class EligibilityIndicators
         IEnumerable<string> unmetConditions,
         DateTime evaluatedAtUtc)
     {
-        DebtToIncomeRatio = Math.Round(debtToIncomeRatio, 4);
-        LoanToValueRatio = Math.Round(loanToValueRatio, 4);
+        DebtToIncomeRatio = debtToIncomeRatio.HasValue ? Math.Round(debtToIncomeRatio.Value, 4) : null;
+        LoanToValueRatio = loanToValueRatio.HasValue ? Math.Round(loanToValueRatio.Value, 4) : null;
         IsDtiEligible = isDtiEligible;
         IsLtvEligible = isLtvEligible;
         IsCreditScoreEligible = isCreditScoreEligible;

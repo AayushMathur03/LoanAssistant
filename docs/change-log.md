@@ -2,6 +2,20 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Slice 6 Release Gate Passed] - 2026-09-14
+
+### Added & Verified
+- **Deterministic DTI & Eligibility Domain Engine (`Loan.Domain.Eligibility`)**:
+  - Enhanced `EligibilityCalculator.cs` enforcing pure C# deterministic financial calculations without LLM involvement (**BR-01**, **BR-03**).
+  - Implemented zero/negative income guard (`income <= 0 => DebtToIncomeRatio = null, IsDtiEligible = false, Status = Ineligible`) eliminating false 1.0 (100%) ratio representations.
+  - Implemented product-specific LTV applicability (`RequiresPropertyValuation` flag in `ProductRules`). For unsecured Personal Loans (`LOAN-PERSONAL` v2.0), `LoanToValueRatio = null` and `IsLtvEligible = true`. For Mortgages (`MORTGAGE-STD` v1.2), zero property value returns `LoanToValueRatio = null` and `Status = Ineligible`.
+  - Implemented explicit 4-state status precedence: `PendingInformation` (unverified mandatory evidence) -> `Ineligible` (invalid inputs / hard rule failure) -> `ReferToHuman` (DTI/LTV policy exception eligible for manual officer review) -> `Eligible` (all rules pass).
+  - Verified fact precedence (`ApplicantFacts.EffectiveMonthlyIncome` & `EffectiveCreditScore`) prioritizing verified values over stated facts (**BR-02**).
+  - Reconciled `ProductRules` factory defaults with indexed RAG markdown policy documents (`DOC-PERSONAL-V2` v2.0 & `DOC-MORTGAGE-V12` v1.2).
+  - Added unit test suite `DeterministicEligibilityEngineTests.cs` (exact boundary thresholds: DTI=43.0%, LTV=80.0%, Credit=640; zero income/property guards; precedence).
+  - Added integration scenario runner `SyntheticApplicationScenarioTests.cs` validating all 12 canonical synthetic application scenarios (`SYN-888777` through `SYN-000000`).
+- Total tests passing: **76/76 tests passing** across all 6 test projects.
+
 ## [Slice 5 Release Gate Passed] - 2026-09-14
 
 ### Added & Verified

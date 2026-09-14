@@ -67,13 +67,15 @@ Record of key architectural, technical, and implementation decisions for the pro
 
 ---
 
-## ADR-009: JSON-RPC 2.0 Model Context Protocol (MCP) & Safe Recommendation Draft Pipeline
+## ADR-010: Pure C# Deterministic Eligibility Engine, Status Precedence & Policy Reconciliation
 - **Date**: 2026-09-14
 - **Status**: Accepted
-- **Context**: Slice 5 requires interoperability with standard Model Context Protocol (MCP) clients, application-scoped verification tools (`get_identity_status`, `get_income_verification`, `get_credit_score`, `search_policy`), server-side application scoping security, and safe recommendation draft generation (`save_draft`).
-- **Decision**: 
-  - Implemented `McpToolServer` following JSON-RPC 2.0 protocol and Model Context Protocol spec `2024-11-05` over Streamable HTTP (`POST /api/mcp`).
-  - Registered 5 application-scoped tools: `get_identity_status`, `get_income_verification`, `get_credit_score`, `search_policy`, and `save_draft`.
-  - Implemented server-side application scoping validation: `applicationId` and `syntheticId` must match the bound `LoanApplication.Facts.SyntheticId`. Mismatches return explicit `CrossApplicationMismatch` errors (`IsError = true`), preventing cross-application data leaks.
-  - Enforced `save_draft` safety: `routingState` accepts ONLY review states (`PendingInformation`, `ManualReview`, `ReadyForOfficerReview`). Final decisions (`Approve`, `Reject`) are rejected with `InvalidArguments` errors, maintaining loan officer exclusivity for final status changes (**BR-07**).
-- **Consequences**: Provides standard MCP protocol interoperability for external agent tool orchestration while guaranteeing application security boundaries and preventing AI agents from making unauthorized approval/rejection decisions.
+- **Context**: Slice 6 requires deterministic DTI, LTV, and credit eligibility evaluation in `Loan.Domain`, strict 4-state status precedence (`PendingInformation`, `Ineligible`, `ReferToHuman`, `Eligible`), product-specific LTV applicability, zero/invalid input guards, and policy reconciliation with indexed RAG markdown documents.
+- **Decision**:
+  - Implemented `EligibilityCalculator.cs` as a pure C# static domain service with zero LLM or cloud dependencies (**BR-01**, **BR-03**).
+  - Enforced zero/negative income guard (`income <= 0 => DebtToIncomeRatio = null, IsDtiEligible = false, Status = Ineligible`), avoiding false 100% ratio representations.
+  - Enforced product-specific LTV relevance via `ProductRules.RequiresPropertyValuation`. Unsecured Personal Loans (`LOAN-PERSONAL` v2.0) set `LoanToValueRatio = null` and `IsLtvEligible = true`. Mortgages (`MORTGAGE-STD` v1.2) set `RequiresPropertyValuation = true`.
+  - Implemented explicit status evaluation order: `PendingInformation` (missing mandatory evidence) -> `Ineligible` (invalid inputs or credit/income/loan amount hard rule failure) -> `ReferToHuman` (DTI or LTV exception eligible for manual loan officer review) -> `Eligible` (all rules pass).
+  - Enforced verified vs. stated fact precedence (`ApplicantFacts.EffectiveMonthlyIncome` & `EffectiveCreditScore`) prioritizing verified values (**BR-02**).
+  - Reconciled `ProductRules` factory thresholds (`Mortgage` v1.2: DTI 43%, LTV 80%, Credit 640; `Personal Loan` v2.0: DTI 38%, Credit 600, Min Income $2.5k) with effective RAG policy markdown guides (`DOC-MORTGAGE-V12`, `DOC-PERSONAL-V2`).
+- **Consequences**: Guarantees zero LLM arithmetic hallucinations, strict mathematical precision, and full alignment between domain rules and compliance documentation across all 12 synthetic application scenarios.

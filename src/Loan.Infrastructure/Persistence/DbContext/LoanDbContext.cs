@@ -269,8 +269,8 @@ internal record ProductRulesDto(
 }
 
 internal record EligibilityIndicatorsDto(
-    decimal DebtToIncomeRatio,
-    decimal LoanToValueRatio,
+    decimal? DebtToIncomeRatio,
+    decimal? LoanToValueRatio,
     bool IsDtiEligible,
     bool IsLtvEligible,
     bool IsCreditScoreEligible,

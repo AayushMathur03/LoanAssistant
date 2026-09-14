@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 5 - Typed Verification Tools & MCP Server (COMPLETED & VERIFIED)
+- **Current Phase**: Slice 6 - Deterministic DTI & Eligibility Domain Engine (COMPLETED & VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (53 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
-- **MCP Transport Status**: JSON-RPC 2.0 Streamable HTTP Endpoint (`POST /api/mcp`) supporting standard MCP spec (`2024-11-05`) with 5 application-scoped tools and safe recommendation draft generation.
+- **Test Status**: 100% Passing (76 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
+- **Domain Engine Status**: Pure C# deterministic eligibility calculator with product-specific LTV applicability, zero/negative input guards, strict 4-state status precedence (`PendingInformation` -> `Ineligible` -> `ReferToHuman` -> `Eligible`), verified-over-stated fact precedence, and 12-scenario synthetic application matrix coverage.
 
 ---
 
@@ -22,8 +22,8 @@
 | **Slice 3** | **Azure AI Search RAG & Policy Docs** | 🟢 Complete & Verified | Installed `Azure.Search.Documents` v11.6.0. 8 synthetic versioned policy docs created in `SeedPolicies/`. Built `PolicyIndexer` and `AzureAiSearchPolicyRetriever` for 1536-dim hybrid vector search (`text-embedding-3-small`). Live indexing & search tested. |
 | **Slice 4** | **Synthetic Document Processing** | 🟢 Complete & Verified | `IDocumentStorageService` stream storage (`App_Data/Uploads`), `DocumentUploadValidator` security suite, `SyntheticDocumentExtractor` (5 document categories, SSN masking, $<0.85$ low confidence), role-based confirmation/override, safe field audit logs. |
 | **Slice 5** | **Typed Verification Tools & MCP** | 🟢 Complete & Verified | 3 typed verification readers (`IIdentityReader`, `IIncomeReader`, `ICreditReader`), 12 synthetic records with unverified handling, server-side `ApplicationId` + `SyntheticId` scoping security, safe `save_draft` tool (disallows Approve/Reject), JSON-RPC 2.0 Streamable HTTP server (`POST /api/mcp`). |
-| **Slice 6** | **Deterministic DTI & Eligibility** | ⏳ Next | Domain calculation test suite & synthetic verification data. |
-| **Slice 7** | **Bounded Multi-Agent Orchestration** | ⏳ Planned | Document, Eligibility, and Compliance agent boundaries. |
+| **Slice 6** | **Deterministic DTI & Eligibility** | 🟢 Complete & Verified | Pure C# deterministic calculator in `Loan.Domain`, product-specific LTV applicability (mortgage vs personal loan), zero/invalid income guard (returns `null` ratio + `Ineligible`), verified vs stated fact precedence (**BR-02**, **BR-03**), exact boundary threshold tests, and 12 synthetic scenario test runner. |
+| **Slice 7** | **Bounded Multi-Agent Orchestration** | ⏳ Next | Document, Eligibility, and Compliance agent boundaries. |
 | **Slice 8** | **Officer Review & Audit Trail** | ⏳ Planned | Controlled officer approval path & audit trail. |
 | **Slice 9** | **Security & Prompt Refusal** | ⏳ Planned | Data masking & prompt injection refusal suite. |
 | **Slice 10** | **Telemetry, Evaluation & Resilience** | ⏳ Planned | 20 evaluation prompt runner & health metrics. |

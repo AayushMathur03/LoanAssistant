@@ -49,9 +49,15 @@
 - [x] Add `SyntheticVerificationServicesTests`, `McpApplicationScopingTests`, `McpSaveDraftTests`, and update `McpContractTests`.
 - [x] Verify full solution test suite passing (53/53 tests passing across all projects).
 
-### Slice 6: Deterministic DTI & Eligibility Domain Rules
-- [ ] Expand eligibility calculator tests & domain rules.
-- [ ] Validate deterministic calculations against all 12 synthetic application scenarios.
+### Slice 6: Deterministic DTI & Eligibility Domain Engine
+- [x] Update `ProductRules.cs` adding `RequiresPropertyValuation` property and reconciling factory defaults with RAG policies (`MORTGAGE-STD` v1.2, `LOAN-PERSONAL` v2.0).
+- [x] Make `DebtToIncomeRatio` and `LoanToValueRatio` nullable decimals in `EligibilityIndicators` and DTOs to represent zero/invalid income and non-applicable property valuations cleanly.
+- [x] Implement strict 4-state status precedence in `EligibilityCalculator.cs`: `PendingInformation` -> `Ineligible` -> `ReferToHuman` -> `Eligible`.
+- [x] Add zero/negative income guard (`income <= 0 => DTI = null, IsDtiEligible = false, Status = Ineligible`) and zero/negative property value guard (`propertyValue <= 0 => LTV = null, IsLtvEligible = false, Status = Ineligible`).
+- [x] Verify verified-over-stated fact precedence (`ApplicantFacts.EffectiveMonthlyIncome` & `EffectiveCreditScore`) with zero LLM involvement.
+- [x] Add `DeterministicEligibilityEngineTests.cs` covering exact boundary thresholds, edge cases, precedence, and status semantics.
+- [x] Add `SyntheticApplicationScenarioTests.cs` validating all 12 canonical synthetic application scenarios (`SYN-888777` through `SYN-000000`).
+- [x] Verify full solution test suite passing (76/76 tests passing).
 
 ### Slice 7: Bounded Multi-Agent Orchestration
 - [ ] Implement Document Agent, Eligibility Agent, and Compliance Agent.

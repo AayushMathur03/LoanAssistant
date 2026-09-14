@@ -92,7 +92,7 @@
                 <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                     <div style="font-size: 0.8rem; color: var(--text-muted);">Debt-to-Income (DTI)</div>
                     <div style="font-size: 1.5rem; font-weight: 700; color: @(ind.IsDtiEligible ? "var(--color-success)" : "var(--color-danger)");">
-                        @ind.DebtToIncomeRatio.ToString("P1")
+                        @(ind.DebtToIncomeRatio.HasValue ? ind.DebtToIncomeRatio.Value.ToString("P1") : "N/A")
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Max Threshold: @Model.ProductRules.MaxDtiRatio.ToString("P1")</div>
                 </div>
@@ -100,7 +100,7 @@
                 <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
                     <div style="font-size: 0.8rem; color: var(--text-muted);">Loan-to-Value (LTV)</div>
                     <div style="font-size: 1.5rem; font-weight: 700; color: @(ind.IsLtvEligible ? "var(--color-success)" : "var(--color-danger)");">
-                        @ind.LoanToValueRatio.ToString("P1")
+                        @(ind.LoanToValueRatio.HasValue ? ind.LoanToValueRatio.Value.ToString("P1") : "N/A")
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Max Threshold: @Model.ProductRules.MaxLtvRatio.ToString("P1")</div>
                 </div>
