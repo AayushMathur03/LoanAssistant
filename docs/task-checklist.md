@@ -86,4 +86,15 @@
 - [x] Verify full solution test suite passing (106/106 tests passing across all 6 test projects).
 
 ### Slice 10: Telemetry, Evaluation Runner & Resilience
-- [ ] Implement 20 evaluation prompt runner & health metrics.
+- [x] **Step 10.1: Health Checks**:
+  - Implemented `/health` process liveness endpoint (fast response, zero external network calls).
+  - Implemented `/health/ready` core readiness endpoint with SQL Server connectivity verification and bounded 3-second timeout.
+  - Implemented `/health/details` detailed dependency breakdown exposing status for SQL Server, Azure OpenAI, and Azure AI Search (AI dependency failures mark overall status as `Degraded` HTTP 200 without failing process liveness).
+  - Added `HealthControllerTests.cs` verifying healthy/unhealthy/degraded states, timeout handling, and structured response shapes.
+  - Verified full test suite passing (114/114 tests passing across all 6 test projects).
+- [ ] Step 10.2: Structured Telemetry & Token Tracking
+- [ ] Step 10.3: Resilience & Transient Policy Controls
+- [ ] Step 10.4: 20-Prompt Evaluation Suite & Runner
+- [ ] Step 10.5: Production Database Migration Strategy & Azure Configuration
+- [ ] Step 10.6: Rollback Documentation & Final Demonstration Evidence
+

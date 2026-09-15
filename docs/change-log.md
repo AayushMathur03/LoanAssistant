@@ -2,7 +2,20 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Step 10.1 Health Checks Passed] - 2026-09-15
+
+### Added & Verified
+- **Health Checks & Dependency Probing (`Loan.Web.Controllers`, `Loan.EndToEndTests`)**:
+  - Implemented `HealthController.cs` providing three health check endpoints:
+    - `GET /health` (Process Liveness): Instant response, zero external network calls, returns HTTP 200 `Healthy`.
+    - `GET /health/ready` (Core Readiness): Verifies SQL Server database connectivity with a bounded 3-second cancellation timeout. Returns HTTP 200 `Connected` or HTTP 503 `Unavailable`.
+    - `GET /health/details` (Detailed Dependency Breakdown): Exposes granular status for SQL Server, Azure OpenAI, and Azure AI Search. Unconfigured/failing AI dependencies return overall status `Degraded` (HTTP 200) without crashing process liveness or failing core SQL readiness.
+  - Implemented strongly typed `HealthStatusResponse` and `DependencyHealth` DTOs.
+  - Implemented unit and end-to-end integration tests in `HealthControllerTests.cs` validating healthy, unhealthy, degraded, timeout, and cancellation behaviors.
+- Total tests passing: **114/114 tests passing** across all 6 test projects.
+
 ## [Slice 9 Release Gate Passed] - 2026-09-14
+
 
 ### Added & Verified
 - **Security, Privacy & Prompt Refusal Suite (`Loan.Application.Common`, `Loan.PromptTests`)**:

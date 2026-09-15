@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 9 - Security, Privacy & Prompt Refusal Suite (COMPLETED & VERIFIED)
+- **Current Phase**: Slice 10 - Telemetry, Evaluation & Resilience (Step 10.1: Health Checks COMPLETED & VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (106 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
-- **Security & Privacy Status**: PII masking (`PiiMasker.cs`), prompt injection defense (`PromptInjectionGuard.cs`), short-circuit refusal responses, server-side cross-application tenant isolation, and prompt refusal dataset operational.
+- **Test Status**: 100% Passing (114 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
+- **Security & Health Status**: PII masking, prompt injection defense, server-side tenant isolation, process liveness (`/health`), SQL core readiness (`/health/ready`), and dependency health breakdown (`/health/details`) operational.
 
 ---
 
@@ -23,6 +23,11 @@
 | **Slice 4** | **Synthetic Document Processing** | 🟢 Complete & Verified | `IDocumentStorageService` stream storage (`App_Data/Uploads`), `DocumentUploadValidator` security suite, `SyntheticDocumentExtractor` (5 document categories, SSN masking, $<0.85$ low confidence), role-based confirmation/override, safe field audit logs. |
 | **Slice 5** | **Typed Verification Tools & MCP** | 🟢 Complete & Verified | 3 typed verification readers (`IIdentityReader`, `IIncomeReader`, `ICreditReader`), 12 synthetic records with unverified handling, server-side `ApplicationId` + `SyntheticId` scoping security, safe `save_draft` tool (disallows Approve/Reject), JSON-RPC 2.0 Streamable HTTP server (`POST /api/mcp`). |
 | **Slice 6** | **Deterministic DTI & Eligibility** | 🟢 Complete & Verified | Pure C# deterministic calculator in `Loan.Domain`, product-specific LTV applicability (mortgage vs personal loan), zero/invalid income guard (returns `null` ratio + `Ineligible`), verified vs stated fact precedence (**BR-02**, **BR-03**), exact boundary threshold tests, and 12 synthetic scenario test runner. |
+| **Slice 7** | **Multi-Agent Orchestration** | 🟢 Complete & Verified | Bounded Document, Eligibility, Compliance specialist agents, orchestrator producing schema-valid `RecommendationDraft`, deterministic override system, non-approval disclaimer. |
+| **Slice 8** | **Officer Review & Audit Trail** | 🟢 Complete & Verified | Controlled officer approval flow, decision note recording, immutable audit history timeline, SSE streaming endpoint (`GET /Officer/StreamRecommendationDraft`). |
+| **Slice 9** | **Security & Prompt Refusal Suite** | 🟢 Complete & Verified | PII masking (`PiiMasker.cs`), prompt injection defense (`PromptInjectionGuard.cs`), short-circuit refusal responses, server-side cross-application tenant isolation, prompt refusal dataset. |
+| **Slice 10** | **Telemetry, Evaluation & Resilience** | 🟡 In Progress (Step 10.1 Done) | Implemented `/health` (liveness), `/health/ready` (SQL readiness with 3s timeout), `/health/details` (SQL, OpenAI, AI Search breakdown returning `Degraded` HTTP 200 on AI failures), and `HealthControllerTests.cs`. |
+
 | **Slice 7** | **Bounded Multi-Agent Orchestration** | 🟢 Complete & Verified | 4 specialist agents (`DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, `ComplianceReviewAgent`, `RecommendationOrchestratorAgent`), tool permission allow-lists, deterministic `RoutingState` & `RiskScore` overrides, grounded RAG citations, safe `save_draft` persistence. |
 | **Slice 8** | **Officer Review & Audit Trail** | 🟢 Complete & Verified | Server-Sent Events (SSE) streaming endpoint (`StreamRecommendationDraft`), **BR-07** Loan Officer exclusivity enforcement for `Approved`/`Rejected`/`InformationRequested` decisions, interactive review view (`Review.cshtml`), AI safety disclaimer, and immutable audit log timeline. |
 | **Slice 9** | **Security & Prompt Refusal** | 🟢 Complete & Verified | `PiiMasker` SSN/Account/Email redaction, `PromptInjectionGuard` keyword/pattern detection, short-circuit refusal responses, cross-tenant application isolation, and NUnit security test suite (106 tests passing). |
