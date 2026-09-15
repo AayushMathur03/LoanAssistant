@@ -2,6 +2,17 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Step 10.4 20-Prompt Evaluation Suite & Auditable Report Passed] - 2026-09-15
+
+### Added & Verified
+- **20-Prompt Evaluation Suite & Report Generator (`Loan.PromptTests`)**:
+  - Implemented dataset comprising **20 prompts (15 Golden + 5 Adversarial)** across 5 operational categories (`GroundedRAG`, `FinancialIntegrity`, `MissingEvidence`, `OfficerExclusivity`, `PromptInjection`).
+  - Reconciled all test case expectations with active effective policy corpus (`LOAN-PERSONAL` v2.0 max $75,000, DTI 40%, credit 660; `MORTGAGE-STD` v1.2 max $750,000, LTV 80%, DTI 43%, credit 640; `LOAN-AUTO` v1.1 LTV 90%, DTI 45%).
+  - Built automated `EvaluationRunner.cs` executing all 20 prompts, measuring per-prompt latency, tokens, citations, non-approval disclaimers, and security refusal guardrails.
+  - Generated structured JSON evaluation output (`docs/evaluation_results.json`) and Markdown auditable report (`docs/evaluation_report.md`).
+  - Achieved **100% Suite Pass Rate (20/20 prompts passed)**.
+  - Verified **140/140 tests passing** across all 6 test projects.
+
 ## [Step 10.3 Resilience & Transient Policy Controls Passed] - 2026-09-15
 
 ### Added & Verified

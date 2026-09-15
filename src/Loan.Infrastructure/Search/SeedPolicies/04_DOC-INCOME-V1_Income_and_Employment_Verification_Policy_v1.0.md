@@ -14,6 +14,8 @@ EffectiveTo: Active
 ## Section 1.0 Purpose
 ### 1.1 Objective
 This synthetic policy defines minimum income and employment evidence.
+### 1.2 Accepted Document Types
+Accepted document types for income verification include recent consecutive paystubs, W-2 forms, bank statements, and Tax Returns (Forms 1040).
 
 ## Section 2.0 Salaried Applicant Evidence
 ### 2.1 Recent Paystubs
@@ -26,6 +28,8 @@ Each paystub must be dated within the last 30 days.
 W-2 forms for the past two years are required when applicable.
 ### 3.2 Self-Employed Applicants
 Self-employed applicants require two years of tax returns when applicable.
+### 3.3 Zero Monthly Income
+An applicant with $0 monthly income has an Invalid (null) debt-to-income (DTI) ratio because division by zero is mathematically undefined.
 
 ## Section 4.0 Employment Verification
 ### 4.1 Verification

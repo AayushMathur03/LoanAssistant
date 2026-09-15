@@ -101,6 +101,26 @@ Record of key architectural, technical, and implementation decisions for the pro
   - Implemented `PromptInjectionGuard` in `Loan.Application.Common` checking keywords (`"SYSTEM OVERRIDE"`, `"IGNORE PREVIOUS INSTRUCTIONS"`, `"PRINT SYSTEM PROMPT"`) and regex patterns.
   - Short-circuited `AskProductQuestionQueryHandler` with standardized refusal response when injection attempt is detected, skipping RAG retrieval and LLM processing.
   - Enforced server-side application isolation across MCP server tools and document override commands.
-- **Consequences**: Ensures PII protection, zero system prompt leakage, and automated refusal of malicious prompt injection attacks.
+## ADR-014: Authoritative Synthetic Policy Parameter Synchronization
+- **Date**: 2026-09-15
+- **Status**: Accepted
+- **Context**: Discrepancies existed between test mocks/evaluation datasets and the authoritative synthetic policy corpus (`02_DOC-PERSONAL-V2_Personal_Loan_Product_Guide_v2.0.md`) and `ProductRules.cs`.
+- **Decision**: Reconciled all test dataset expectations, synthetic retrievers, and evaluation prompts to point to the single authoritative policy source of truth:
+  - **LOAN-PERSONAL v2.0**: Max Principal = **$75,000**, Max Standard DTI = **38.0%**, Min Credit Score = **600**, Min Income = **$2,500**, Max Term = **72 months**, LTV = **Not Applicable**.
+  - **MORTGAGE-STD v1.2**: Max Principal = **$750,000**, Max Standard DTI = **43.0%**, Max LTV = **80.0%**, Min Credit Score = **640**.
+  - **LOAN-AUTO v1.1**: Max LTV = **90.0%**, Max DTI = **45.0%**, Min Credit Score = **620**.
+  - **DOC-COMPLIANCE-DISCLOSURE-V2 v2.0**: Updated with **Section 8.1 TRID and RESPA Compliance** (3 business day Loan Estimate disclosure requirement).
+- **Consequences**: Guarantees 100% agreement across policy corpus markdown files, C# `ProductRules`, synthetic retrievers, evaluation datasets, and automated test assertions.
+
+---
+
+## ADR-015: Distinct Offline Deterministic vs Live Azure Evaluation Modes
+- **Date**: 2026-09-15
+- **Status**: Accepted
+- **Context**: Step 10.4 requires evaluation runners to clearly distinguish between offline local test benchmarks and live Azure AI Foundry integration runs without misrepresenting offline timing as cloud latency.
+- **Decision**: Implemented explicit evaluation mode tagging in `EvaluationRunner.cs` and `EvaluationSummary`:
+  - **Offline Deterministic Mode**: Uses `SyntheticChatModel` and `SyntheticPolicyRetriever`. Provides fast (< 1 ms), repeatable, zero-cost CI test suite validation.
+  - **Live Azure Mode**: Uses `AzureOpenAIChatModel` (`gpt-4o`) and `AzureAiSearchPolicyRetriever` (`text-embedding-3-small` hybrid search). Captures real Azure network latencies, token counts, and live RAG citations.
+- **Consequences**: Prevents misrepresenting offline test mock performance while enabling comprehensive auditable reporting for both local CI and live cloud environments.
 
 

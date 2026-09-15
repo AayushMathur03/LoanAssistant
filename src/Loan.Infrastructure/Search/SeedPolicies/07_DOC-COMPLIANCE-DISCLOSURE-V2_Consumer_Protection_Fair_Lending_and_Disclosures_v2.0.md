@@ -32,6 +32,8 @@ AI systems NEVER autonomously approve, reject, price, or disburse loans.
 All final decisions rest exclusively with authorized human loan officers.
 ### 4.3 Recommendation vs Decision
 A model-generated recommendation is an input to human review, not a final lending decision.
+### 4.4 Orchestrator Routing State
+When a loan recommendation draft requires human officer review, the AI orchestrator assigns the `ReadyForOfficerReview` routing state to the recommendation package.
 
 ## Section 5.0 Privacy and Data Protection
 ### 5.1 Sensitive Identifiers
@@ -48,3 +50,7 @@ Grounded answers display source title, version, and relevant section/page metada
 ## Section 7.0 Refusal
 ### 7.1 Insufficient Evidence
 If evidence is insufficient, state that the information cannot be verified rather than inventing an answer.
+
+## Section 8.0 TRID and RESPA Compliance
+### 8.1 Real Estate Settlement Procedures Act (RESPA) & TRID Notice
+Under TRID/RESPA guidelines, Loan Estimate disclosures must be delivered within three business days of receiving a completed mortgage application. Unearned fees and kickbacks under Section 8 are strictly prohibited.

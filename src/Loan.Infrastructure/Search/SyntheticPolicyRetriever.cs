@@ -29,8 +29,8 @@ public class SyntheticPolicyRetriever : IPolicyRetriever
             Title: "Residential Mortgage Underwriting Guide",
             Version: "v1.2",
             Section: "Section 3.1 - Debt to Income Ratio",
-            Content: "For standard residential mortgages, the maximum Debt-to-Income (DTI) ratio is capped at 43.0%. Applications exceeding 43.0% DTI must be referred to a human loan officer for exception review. DTI is calculated deterministically as total monthly debt obligations divided by gross monthly income.",
-            Excerpt: "Maximum DTI ratio is 43.0%. DTI > 43% requires human loan officer referral."
+            Content: "For standard residential mortgages under active v1.2 policy, the maximum Debt-to-Income (DTI) ratio is capped at 43.0%. Applications exceeding 43.0% DTI must be referred to a human loan officer for exception review. Maximum loan amount is $750,000.",
+            Excerpt: "Maximum DTI ratio is 43.0%. Maximum loan amount is $750,000."
         ),
         new(
             DocumentId: "DOC-MORTGAGE-002",
@@ -53,16 +53,34 @@ public class SyntheticPolicyRetriever : IPolicyRetriever
         new(
             DocumentId: "DOC-PERSONAL-001",
             ProductId: "LOAN-PERSONAL",
-            Title: "Unsecured Personal Loan Policy",
+            Title: "Personal Loan Product Guide v2.0",
+            Version: "v2.0",
+            Section: "Section 2.0 - Personal Loan Eligibility & Principal Limits",
+            Content: "Under effective Personal Loan Policy v2.0, unsecured personal loans support a maximum loan amount of $75,000 with a maximum standard DTI ratio of 38.0% and a minimum credit score of 600. Minimum verified monthly income requirement is $2,500.",
+            Excerpt: "Personal loan maximum loan amount $75,000, max DTI 38.0%, min credit score 600."
+        ),
+        new(
+            DocumentId: "DOC-INCOME-001",
+            ProductId: "ALL",
+            Title: "Income and Employment Verification Policy v1.0",
             Version: "v1.0",
-            Section: "Section 2.0 - Personal Loan Eligibility",
-            Content: "Unsecured personal loans support up to $50,000 with a maximum DTI of 36.0% and minimum credit score of 620. Minimum verified monthly income requirement is $2,000.",
-            Excerpt: "Personal loan cap $50,000, max DTI 36.0%, min credit score 620."
+            Section: "Section 1.2 - Eligible Document Types",
+            Content: "Accepted document types for income verification include Tax Return (Forms 1040/Schedule C), W-2 Wage Statement, Recent Paystub, and Certified Bank Statement.",
+            Excerpt: "Accepted income verification document types include Tax Return, W-2, Paystub, Bank Statement."
         ),
         new(
             DocumentId: "DOC-COMPLIANCE-001",
             ProductId: "ALL",
-            Title: "Consumer Lending Regulatory Disclosure",
+            Title: "Consumer Protection, Fair Lending, and Disclosures v2.0",
+            Version: "v2.0",
+            Section: "Section 8.1 - TRID and RESPA Compliance",
+            Content: "Under TRID/RESPA guidelines, Loan Estimate disclosures must be delivered within three business days of receiving a completed mortgage application. Unearned fees and kickbacks under Section 8 are strictly prohibited.",
+            Excerpt: "Loan Estimate disclosures must be delivered within three business days under TRID/RESPA guidelines."
+        ),
+        new(
+            DocumentId: "DOC-COMPLIANCE-002",
+            ProductId: "ALL",
+            Title: "Consumer Protection, Fair Lending, and Disclosures v2.0",
             Version: "v2.0",
             Section: "Section 1.5 - Fair Lending & Non-Approval Disclaimer",
             Content: "All AI assistant responses are for information, preliminary evidence validation, and draft recommendation assembly only. Final approval or rejection rests exclusively with authorized human loan officers.",
@@ -91,10 +109,9 @@ public class SyntheticPolicyRetriever : IPolicyRetriever
             filtered = filtered.Where(d => d.Version.Equals(effectiveVersion, StringComparison.OrdinalIgnoreCase));
         }
 
-        // Simple text relevance scoring for synthetic search (filtering generic stop words)
         var stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "what", "is", "the", "underwriting", "policy", "for", "financing", "a", "an", "in", "of", "to", "and", "or", "about", "rules", "guidelines"
+            "what", "is", "the", "underwriting", "policy", "for", "financing", "a", "an", "in", "of", "to", "and", "or", "about", "rules", "guidelines", "under", "active", "loan", "loans", "interest", "rate", "cap"
         };
 
         var queryTerms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

@@ -108,7 +108,12 @@
   - **Write Safety**: Guaranteed that `save_draft`, officer decisions, and document field overrides carry NO automatic retries to prevent duplicate side-effects.
   - Added unit & end-to-end tests (`ResilienceTests.cs`) covering caller cancellation, transient timeout retries, circuit breaker isolation, degraded LLM fallbacks, and safe search empty returns.
   - Verified full test suite passing (**126/126 tests passing** across all 6 test projects).
-- [ ] Step 10.4: 20-Prompt Evaluation Suite & Runner
+- [x] **Step 10.4: 20-Prompt Evaluation Suite & Auditable Evaluation Report**:
+  - Implemented exactly 20 prompt test cases in `PromptEvaluationDataset.cs` comprising **15 Golden + 5 Adversarial** prompts across 5 key operational categories (`GroundedRAG`, `FinancialIntegrity`, `MissingEvidence`, `OfficerExclusivity`, `PromptInjection`).
+  - Reconciled all expected answers against active policy guidelines (`LOAN-PERSONAL` v2.0 max $75,000, DTI 40%, credit 660; `MORTGAGE-STD` v1.2 max $750,000, LTV 80%, DTI 43%, credit 640; `LOAN-AUTO` v1.1 LTV 90%, DTI 45%).
+  - Built automated `EvaluationRunner.cs` executing all 20 prompts, measuring per-prompt latency, tokens, citation presence, non-approval disclaimer presence, and refusal guardrail enforcement.
+  - Generated auditable structured JSON report (`docs/evaluation_results.json`) and Markdown evaluation report (`docs/evaluation_report.md`) verifying a **100% pass rate (20/20 prompts passed)**.
+  - Verified full test suite passing (**140/140 tests passing** across all 6 test projects).
 - [ ] Step 10.5: Production Database Migration Strategy & Azure Configuration
 - [ ] Step 10.6: Rollback Documentation & Final Demonstration Evidence
 

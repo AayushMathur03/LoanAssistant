@@ -51,7 +51,7 @@ public class AskProductQuestionQueryHandler
             query: query.Question,
             targetProductId: query.TargetProductId,
             effectiveVersion: query.PolicyVersion,
-            topK: 3,
+            topK: 5,
             cancellationToken: cancellationToken)).ToList();
 
         if (!searchResults.Any())
