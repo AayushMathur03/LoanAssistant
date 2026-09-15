@@ -5,6 +5,13 @@ namespace Loan.Infrastructure.Search;
 
 public class SyntheticPolicyRetriever : IPolicyRetriever
 {
+    private readonly ITelemetryCollector? _telemetryCollector;
+
+    public SyntheticPolicyRetriever(ITelemetryCollector? telemetryCollector = null)
+    {
+        _telemetryCollector = telemetryCollector;
+    }
+
     private record DocumentRecord(
         string DocumentId,
         string ProductId,
@@ -70,6 +77,8 @@ public class SyntheticPolicyRetriever : IPolicyRetriever
         int topK = 5,
         CancellationToken cancellationToken = default)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         var filtered = _documents.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(targetProductId))
@@ -123,6 +132,9 @@ public class SyntheticPolicyRetriever : IPolicyRetriever
                     SectionOrPage: r.Document.Section,
                     Excerpt: r.Document.Excerpt)))
             .ToList();
+
+        sw.Stop();
+        _telemetryCollector?.RecordRagLatency(sw.Elapsed.TotalMilliseconds, results.Count);
 
         return Task.FromResult<IEnumerable<PolicySearchResultDto>>(results);
     }

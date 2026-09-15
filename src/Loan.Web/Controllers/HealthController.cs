@@ -27,17 +27,23 @@ public class HealthController : ControllerBase
     private readonly IChatModel _chatModel;
     private readonly IPolicyRetriever _policyRetriever;
     private readonly IConfiguration _configuration;
+    private readonly ITelemetryCollector _telemetryCollector;
+    private readonly IWebHostEnvironment? _environment;
 
     public HealthController(
         LoanDbContext dbContext,
         IChatModel chatModel,
         IPolicyRetriever policyRetriever,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ITelemetryCollector telemetryCollector,
+        IWebHostEnvironment? environment = null)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _chatModel = chatModel ?? throw new ArgumentNullException(nameof(chatModel));
         _policyRetriever = policyRetriever ?? throw new ArgumentNullException(nameof(policyRetriever));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _telemetryCollector = telemetryCollector ?? throw new ArgumentNullException(nameof(telemetryCollector));
+        _environment = environment;
     }
 
     /// <summary>
@@ -209,5 +215,30 @@ public class HealthController : ControllerBase
             Type: "DetailedDependencies",
             Timestamp: DateTime.UtcNow,
             Dependencies: dependencies));
+    }
+
+    /// <summary>
+    /// GET /health/telemetry
+    /// Exposes recent structured request telemetry metrics (token counts, latencies, tool calls, correlation IDs).
+    /// Endpoint is restricted to Development environment by default unless explicitly enabled via configuration.
+    /// </summary>
+    [HttpGet("telemetry")]
+    public IActionResult GetTelemetry([FromQuery] int count = 20)
+    {
+        var enableTelemetryEndpoint = _configuration.GetValue<bool>("Telemetry:EnableEndpoint", _environment?.IsDevelopment() ?? true);
+        if (!enableTelemetryEndpoint)
+        {
+            return NotFound(new { status = "Disabled", details = "Telemetry inspection endpoint is disabled in production environments." });
+        }
+
+        var telemetry = _telemetryCollector.GetRecentTelemetry(count);
+        return Ok(new
+        {
+            status = "Healthy",
+            type = "StructuredTelemetryMetrics",
+            timestamp = DateTime.UtcNow,
+            count = telemetry.Count,
+            records = telemetry
+        });
     }
 }

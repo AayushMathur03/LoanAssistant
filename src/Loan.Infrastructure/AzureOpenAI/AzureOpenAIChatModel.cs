@@ -19,9 +19,12 @@ public class AzureOpenAIChatModel : IChatModel
     private readonly bool _isConfigured;
     private readonly string _missingConfigReason;
 
-    public AzureOpenAIChatModel(IConfiguration configuration)
+    private readonly ITelemetryCollector? _telemetryCollector;
+
+    public AzureOpenAIChatModel(IConfiguration configuration, ITelemetryCollector? telemetryCollector = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
+        _telemetryCollector = telemetryCollector;
 
         _endpoint = configuration["AzureOpenAI:Endpoint"] ?? string.Empty;
         var apiKey = configuration["AzureOpenAI:ApiKey"] ?? string.Empty;
@@ -66,8 +69,17 @@ public class AzureOpenAIChatModel : IChatModel
             Temperature = (float)temperature
         };
 
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var response = await _chatClient!.CompleteChatAsync(chatMessages, options, cancellationToken);
+        sw.Stop();
+
+        _telemetryCollector?.RecordLlmLatency(sw.Elapsed.TotalMilliseconds);
+
         var completion = response.Value;
+        if (completion.Usage != null)
+        {
+            _telemetryCollector?.RecordTokens(completion.Usage.InputTokenCount, completion.Usage.OutputTokenCount);
+        }
 
         if (completion.Content != null && completion.Content.Count > 0)
         {

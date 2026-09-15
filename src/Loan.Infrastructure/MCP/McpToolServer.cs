@@ -12,6 +12,7 @@ public class McpToolServer
     private readonly ICreditReader _creditReader;
     private readonly IPolicyRetriever _policyRetriever;
     private readonly SaveRecommendationDraftCommandHandler _saveDraftHandler;
+    private readonly ITelemetryCollector? _telemetryCollector;
 
     public McpToolServer(
         ILoanApplicationRepository applicationRepository,
@@ -19,7 +20,8 @@ public class McpToolServer
         IIncomeReader incomeReader,
         ICreditReader creditReader,
         IPolicyRetriever policyRetriever,
-        SaveRecommendationDraftCommandHandler saveDraftHandler)
+        SaveRecommendationDraftCommandHandler saveDraftHandler,
+        ITelemetryCollector? telemetryCollector = null)
     {
         _applicationRepository = applicationRepository;
         _identityReader = identityReader;
@@ -27,6 +29,7 @@ public class McpToolServer
         _creditReader = creditReader;
         _policyRetriever = policyRetriever;
         _saveDraftHandler = saveDraftHandler;
+        _telemetryCollector = telemetryCollector;
     }
 
     public async Task<JsonRpcResponse> HandleRequestAsync(
@@ -72,6 +75,7 @@ public class McpToolServer
                     return new JsonRpcResponse("2.0", new { tools = GetRegisteredTools() }, null, request.Id);
 
                 case "tools/call":
+                    _telemetryCollector?.RecordToolCall();
                     var toolResult = await ExecuteToolCallAsync(request.Params, actorId, actorRole, cancellationToken);
                     return new JsonRpcResponse("2.0", toolResult, null, request.Id);
 

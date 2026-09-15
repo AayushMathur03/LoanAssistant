@@ -15,13 +15,16 @@ public class AzureAiSearchPolicyRetriever : IPolicyRetriever
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<AzureAiSearchPolicyRetriever> _logger;
+    private readonly ITelemetryCollector? _telemetryCollector;
 
     public AzureAiSearchPolicyRetriever(
         IConfiguration configuration,
-        ILogger<AzureAiSearchPolicyRetriever> logger)
+        ILogger<AzureAiSearchPolicyRetriever> logger,
+        ITelemetryCollector? telemetryCollector = null)
     {
         _configuration = configuration;
         _logger = logger;
+        _telemetryCollector = telemetryCollector;
     }
 
     public async Task<IEnumerable<PolicySearchResultDto>> SearchPolicyAsync(
@@ -31,6 +34,7 @@ public class AzureAiSearchPolicyRetriever : IPolicyRetriever
         int topK = 5,
         CancellationToken cancellationToken = default)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var searchEndpoint = _configuration["AzureAISearch:Endpoint"];
         var searchApiKey = _configuration["AzureAISearch:ApiKey"];
         var indexName = _configuration["AzureAISearch:IndexName"] ?? "loan-policies-index";
@@ -129,6 +133,8 @@ public class AzureAiSearchPolicyRetriever : IPolicyRetriever
                         Excerpt: doc.Excerpt)));
             }
 
+            sw.Stop();
+            _telemetryCollector?.RecordRagLatency(sw.Elapsed.TotalMilliseconds, dtos.Count);
             return dtos;
         }
         catch (Exception ex) when (ex is not InvalidOperationException)

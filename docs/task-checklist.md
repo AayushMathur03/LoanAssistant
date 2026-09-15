@@ -92,7 +92,14 @@
   - Implemented `/health/details` detailed dependency breakdown exposing status for SQL Server, Azure OpenAI, and Azure AI Search (AI dependency failures mark overall status as `Degraded` HTTP 200 without failing process liveness).
   - Added `HealthControllerTests.cs` verifying healthy/unhealthy/degraded states, timeout handling, and structured response shapes.
   - Verified full test suite passing (114/114 tests passing across all 6 test projects).
-- [ ] Step 10.2: Structured Telemetry & Token Tracking
+- [x] **Step 10.2: Structured Telemetry & Token Tracking**:
+  - Implemented `CorrelationContext` (`AsyncLocal<string>`) and `CorrelationIdMiddleware` generating/propagating `X-Correlation-ID` across HTTP requests and async execution contexts.
+  - Implemented `ITelemetryCollector` and `InMemoryTelemetryCollector` capturing structured, measurable request metrics (`RequestTelemetry`).
+  - Integrated token usage tracking (`PromptTokens`, `CompletionTokens`, `TotalTokens`) in `AzureOpenAIChatModel` (via OpenAI SDK Usage API) and `SyntheticChatModel`.
+  - Captured LLM latency, RAG search latency, retrieval hit count, specialist agent-stage latencies (`DocumentAnalysis`, `EligibilityAnalysis`, `ComplianceReview`, `OrchestratorSynthesis`), tool call counts, error categories, and routing distributions.
+  - Exposed `GET /health/telemetry` endpoint returning real measurable request telemetry metrics.
+  - Ensured PII/secret safety across all telemetry logs via `PiiMasker`.
+  - Added unit & integration tests (`StructuredTelemetryTests.cs`) and verified 119/119 tests passing.
 - [ ] Step 10.3: Resilience & Transient Policy Controls
 - [ ] Step 10.4: 20-Prompt Evaluation Suite & Runner
 - [ ] Step 10.5: Production Database Migration Strategy & Azure Configuration

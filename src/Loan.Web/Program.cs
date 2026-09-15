@@ -42,6 +42,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<Loan.Web.Middleware.CorrelationIdMiddleware>();
 app.UseStaticFiles();
 
 app.UseRouting();

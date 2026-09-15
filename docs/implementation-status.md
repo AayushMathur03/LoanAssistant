@@ -6,10 +6,10 @@
 ---
 
 ## Overall Status Summary
-- **Current Phase**: Slice 10 - Telemetry, Evaluation & Resilience (Step 10.1: Health Checks COMPLETED & VERIFIED)
+- **Current Phase**: Slice 10 - Telemetry, Evaluation & Resilience (Step 10.2: Structured Telemetry COMPLETED & VERIFIED)
 - **Build Status**: Passing (0 errors, 0 warnings)
-- **Test Status**: 100% Passing (114 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
-- **Security & Health Status**: PII masking, prompt injection defense, server-side tenant isolation, process liveness (`/health`), SQL core readiness (`/health/ready`), and dependency health breakdown (`/health/details`) operational.
+- **Test Status**: 100% Passing (119 Tests across Domain, Application, Contract, Integration, Prompt, and E2E)
+- **Security & Telemetry Status**: PII masking, prompt injection defense, server-side tenant isolation, process liveness (`/health`), SQL core readiness (`/health/ready`), dependency health breakdown (`/health/details`), correlation IDs (`X-Correlation-ID`), structured telemetry (`ITelemetryCollector`), token tracking (`PromptTokens`/`CompletionTokens`/`TotalTokens`), LLM/RAG/agent-stage latencies, and tool-call metrics operational.
 
 ---
 
@@ -26,12 +26,7 @@
 | **Slice 7** | **Multi-Agent Orchestration** | 🟢 Complete & Verified | Bounded Document, Eligibility, Compliance specialist agents, orchestrator producing schema-valid `RecommendationDraft`, deterministic override system, non-approval disclaimer. |
 | **Slice 8** | **Officer Review & Audit Trail** | 🟢 Complete & Verified | Controlled officer approval flow, decision note recording, immutable audit history timeline, SSE streaming endpoint (`GET /Officer/StreamRecommendationDraft`). |
 | **Slice 9** | **Security & Prompt Refusal Suite** | 🟢 Complete & Verified | PII masking (`PiiMasker.cs`), prompt injection defense (`PromptInjectionGuard.cs`), short-circuit refusal responses, server-side cross-application tenant isolation, prompt refusal dataset. |
-| **Slice 10** | **Telemetry, Evaluation & Resilience** | 🟡 In Progress (Step 10.1 Done) | Implemented `/health` (liveness), `/health/ready` (SQL readiness with 3s timeout), `/health/details` (SQL, OpenAI, AI Search breakdown returning `Degraded` HTTP 200 on AI failures), and `HealthControllerTests.cs`. |
-
-| **Slice 7** | **Bounded Multi-Agent Orchestration** | 🟢 Complete & Verified | 4 specialist agents (`DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, `ComplianceReviewAgent`, `RecommendationOrchestratorAgent`), tool permission allow-lists, deterministic `RoutingState` & `RiskScore` overrides, grounded RAG citations, safe `save_draft` persistence. |
-| **Slice 8** | **Officer Review & Audit Trail** | 🟢 Complete & Verified | Server-Sent Events (SSE) streaming endpoint (`StreamRecommendationDraft`), **BR-07** Loan Officer exclusivity enforcement for `Approved`/`Rejected`/`InformationRequested` decisions, interactive review view (`Review.cshtml`), AI safety disclaimer, and immutable audit log timeline. |
-| **Slice 9** | **Security & Prompt Refusal** | 🟢 Complete & Verified | `PiiMasker` SSN/Account/Email redaction, `PromptInjectionGuard` keyword/pattern detection, short-circuit refusal responses, cross-tenant application isolation, and NUnit security test suite (106 tests passing). |
-| **Slice 10** | **Telemetry, Evaluation & Resilience** | ⏳ Planned | 20 evaluation prompt runner & health metrics. |
+| **Slice 10** | **Telemetry, Evaluation & Resilience** | 🟡 In Progress (Steps 10.1 & 10.2 Done) | Health checks (`/health`, `/health/ready`, `/health/details`), correlation IDs (`X-Correlation-ID`), structured request telemetry (`ITelemetryCollector`), token tracking (`PromptTokens`, `CompletionTokens`, `TotalTokens`), LLM/RAG/stage latencies, tool call counters, `GET /health/telemetry` endpoint. |
 
 ---
 

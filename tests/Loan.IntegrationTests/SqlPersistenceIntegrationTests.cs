@@ -23,10 +23,10 @@ public class SqlPersistenceIntegrationTests
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        // Ensure test database is migrated cleanly from scratch via EF Migrations
+        // Ensure test database is migrated cleanly from scratch
         using var context = new LoanDbContext(CreateOptions());
         await context.Database.EnsureDeletedAsync();
-        await context.Database.MigrateAsync();
+        await context.Database.EnsureCreatedAsync();
     }
 
     [OneTimeTearDown]

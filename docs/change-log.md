@@ -2,6 +2,19 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Step 10.2 Structured Telemetry & Token Tracking Passed] - 2026-09-15
+
+### Added & Verified
+- **Structured Telemetry, Token Tracking & Correlation IDs (`Loan.Application.Abstractions`, `Loan.Infrastructure.Telemetry`, `Loan.Web.Middleware`)**:
+  - Implemented `CorrelationContext` (`AsyncLocal<string>`) and `CorrelationIdMiddleware` for generating and propagating `X-Correlation-ID` across HTTP request boundaries and asynchronous call chains.
+  - Implemented `ITelemetryCollector` and `InMemoryTelemetryCollector` capturing structured, measurable request metrics (`RequestTelemetry`).
+  - Integrated token usage tracking (`PromptTokens`, `CompletionTokens`, `TotalTokens`) in `AzureOpenAIChatModel` (consuming OpenAI SDK Usage API) and `SyntheticChatModel`.
+  - Captured stopwatch latencies for LLM completions, RAG searches (`AzureAiSearchPolicyRetriever`, `SyntheticPolicyRetriever`), retrieval hit counts, and specialist agent stages (`DocumentAnalysis`, `EligibilityAnalysis`, `ComplianceReview`, `OrchestratorSynthesis`).
+  - Captured MCP tool-call counts, error categories, routing distributions, and officer decisions.
+  - Exposed `GET /health/telemetry` endpoint returning structured request telemetry JSON.
+  - Ensured PII and credential safety across all telemetry logging via `PiiMasker`.
+  - Added unit & integration test suite (`StructuredTelemetryTests.cs`) and verified **119/119 tests passing**.
+
 ## [Step 10.1 Health Checks Passed] - 2026-09-15
 
 ### Added & Verified

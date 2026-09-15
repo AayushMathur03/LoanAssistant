@@ -1,6 +1,7 @@
 using Loan.Infrastructure.AzureOpenAI;
 using Loan.Infrastructure.Persistence.DbContext;
 using Loan.Infrastructure.Search;
+using Loan.Infrastructure.Telemetry;
 using Loan.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,8 +41,9 @@ public class HealthControllerTests
 
         var chatModel = new SyntheticChatModel();
         var policyRetriever = new SyntheticPolicyRetriever();
+        var telemetryCollector = new InMemoryTelemetryCollector();
 
-        _controller = new HealthController(_dbContext, chatModel, policyRetriever, _configuration);
+        _controller = new HealthController(_dbContext, chatModel, policyRetriever, _configuration, telemetryCollector);
     }
 
     [TearDown]
@@ -88,7 +90,8 @@ public class HealthControllerTests
         using var invalidDb = new LoanDbContext(invalidOptions);
         var chatModel = new SyntheticChatModel();
         var policyRetriever = new SyntheticPolicyRetriever();
-        var failingController = new HealthController(invalidDb, chatModel, policyRetriever, _configuration);
+        var telemetry = new InMemoryTelemetryCollector();
+        var failingController = new HealthController(invalidDb, chatModel, policyRetriever, _configuration, telemetry);
 
         var result = await failingController.GetReadiness(CancellationToken.None) as ObjectResult;
 
@@ -143,7 +146,8 @@ public class HealthControllerTests
         var emptyConfig = new ConfigurationBuilder().Build();
         var chatModel = new SyntheticChatModel();
         var policyRetriever = new SyntheticPolicyRetriever();
-        var degradedController = new HealthController(_dbContext, chatModel, policyRetriever, emptyConfig);
+        var telemetry = new InMemoryTelemetryCollector();
+        var degradedController = new HealthController(_dbContext, chatModel, policyRetriever, emptyConfig, telemetry);
 
         var result = await degradedController.GetDetails(CancellationToken.None) as ObjectResult;
 
