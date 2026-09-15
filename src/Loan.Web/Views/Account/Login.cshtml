@@ -1,0 +1,141 @@
+@model Loan.Web.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "Secure Persona Sign-In";
+    Layout = "_Layout";
+}
+
+<div style="max-width: 960px; margin: 2rem auto; padding: 0 1rem;">
+    <!-- Welcome Header -->
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 800; font-size: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);">
+            LA
+        </div>
+        <h1 style="font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Apex Lending Assistant</h1>
+        <p style="color: #64748b; font-size: 1rem; max-width: 540px; margin: 0 auto;">
+            Enterprise Privacy-Aware Human-in-the-Loop Loan Processing Platform. Authenticate with your persona role to access your dedicated workspace.
+        </p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
+        <!-- Left: Quick Persona Switcher -->
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Quick Demo Personas</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
+                Select any verified demo persona below for immediate 1-click credentialed access:
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <!-- Applicant Card -->
+                <form asp-action="QuickLogin" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="persona" value="applicant" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <button type="submit" style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem 1rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#2563eb'; this.style.background='#eff6ff';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600; color: #1e293b; display: block;">Alice Cooper</span>
+                                <span style="font-size: 0.78rem; color: #64748b;">applicant@apex.local &bull; App #APP-2026-001</span>
+                            </div>
+                            <span style="background: #e0e7ff; color: #3730a3; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 9999px;">Applicant</span>
+                        </div>
+                    </button>
+                </form>
+
+                <!-- Loan Officer Card -->
+                <form asp-action="QuickLogin" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="persona" value="officer" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <button type="submit" style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem 1rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#059669'; this.style.background='#ecfdf5';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600; color: #1e293b; display: block;">Marcus Vance</span>
+                                <span style="font-size: 0.78rem; color: #64748b;">officer@apex.local &bull; Underwriting Sign-Off</span>
+                            </div>
+                            <span style="background: #d1fae5; color: #065f46; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 9999px;">LoanOfficer</span>
+                        </div>
+                    </button>
+                </form>
+
+                <!-- Compliance Reviewer Card -->
+                <form asp-action="QuickLogin" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="persona" value="compliance" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <button type="submit" style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem 1rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#d97706'; this.style.background='#fffbeb';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600; color: #1e293b; display: block;">Sarah Jenkins</span>
+                                <span style="font-size: 0.78rem; color: #64748b;">compliance@apex.local &bull; Read-Only Audit & Disclosures</span>
+                            </div>
+                            <span style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 9999px;">Compliance</span>
+                        </div>
+                    </button>
+                </form>
+
+                <!-- Administrator Card -->
+                <form asp-action="QuickLogin" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="persona" value="admin" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <button type="submit" style="width: 100%; text-align: left; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem 1rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#7c3aed'; this.style.background='#f5f3ff';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600; color: #1e293b; display: block;">System Administrator</span>
+                                <span style="font-size: 0.78rem; color: #64748b;">admin@apex.local &bull; AI Governance & Integrations</span>
+                            </div>
+                            <span style="background: #ede9fe; color: #5b21b6; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 9999px;">Administrator</span>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right: Manual Email & Password Form -->
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Credential Login</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
+                Standard ASP.NET Core Identity authentication with SQL Server PBKDF2 password hashing:
+            </p>
+
+            <form asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div asp-validation-summary="ModelOnly" style="color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem;"></div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label asp-for="Email" style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem;">Email Address</label>
+                    <input asp-for="Email" type="email" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="e.g. officer@apex.local" required />
+                </div>
+
+                <div style="margin-bottom: 1.25rem;">
+                    <label asp-for="Password" style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem;">Password</label>
+                    <input asp-for="Password" type="password" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required />
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b; cursor: pointer;">
+                        <input asp-for="RememberMe" type="checkbox" /> Remember this device
+                    </label>
+                    <span style="font-size: 0.75rem; color: #94a3b8;">Default: 8-Hour Session</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-weight: 600; font-size: 0.95rem; border-radius: 6px; background: #2563eb; color: white; border: none; cursor: pointer;">
+                    Sign In to Portal
+                </button>
+            </form>
+
+            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; font-size: 0.75rem; color: #64748b;">
+                <strong>Security Guard:</strong> Server-side role policies enforce boundaries. Unauthenticated callers are routed to login, and unauthorized actions return HTTP 403 Forbidden.
+            </div>
+        </div>
+    </div>
+</div>

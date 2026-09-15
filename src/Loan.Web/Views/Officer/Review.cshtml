@@ -239,7 +239,7 @@
         }
 
         <!-- Officer Decision Action Form (BR-07) -->
-        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-bottom: 1.5rem;">
             <h3 style="font-size: 1rem; font-weight: 700; color: var(--color-secondary); margin-bottom: 0.75rem;">⚖️ Authorized Officer Decision (BR-07)</h3>
 
             @if (isClosed)
@@ -262,11 +262,12 @@
             else
             {
                 <form asp-action="SubmitDecision" method="post">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.ApplicationId" />
 
                     <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label class="form-label" for="officerIdInput">Officer ID / Employee Badge:</label>
-                        <input type="text" id="officerIdInput" name="officerId" class="form-control" value="OFFICER-42" required />
+                        <input type="text" id="officerIdInput" name="officerId" class="form-control" value="@(User.Identity?.Name ?? "OFFICER-42")" required />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 1rem;">
@@ -274,13 +275,30 @@
                         <textarea id="notesInput" name="notes" class="form-control" rows="3" placeholder="Enter decision notes, exception rationale, or info requested..." required></textarea>
                     </div>
 
-                    <div style="display: flex; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                         <button type="submit" name="action" value="@RecommendationStatus.ApprovedByOfficer" class="btn btn-success">Approve Application</button>
                         <button type="submit" name="action" value="@RecommendationStatus.ReturnedForInfo" class="btn btn-secondary">Request Information</button>
                         <button type="submit" name="action" value="@RecommendationStatus.RejectedByOfficer" class="btn btn-danger">Reject Application</button>
                     </div>
                 </form>
             }
+        </div>
+
+        <!-- Officer Underwriting AI Assistant (Flow C) -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #1e3a8a; margin: 0;">🤖 Underwriting AI Copilot</h3>
+                <span class="badge" style="background: #ecfdf5; color: #065f46; font-size: 0.72rem;">Grounded Azure RAG</span>
+            </div>
+            
+            <div id="officerChatHistory" style="min-height: 120px; max-height: 220px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+                <span style="color: #64748b;">Ask underwriting or exception policy questions for @Model.ProductRules.ProductName (e.g. "What exceptions permit DTI over 43%?" or "What are the TRID timing requirements?"):</span>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="officerQInput" class="form-control" placeholder="Ask policy question..." style="font-size: 0.85rem; padding: 0.5rem 0.75rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendOfficerQuestion();}" />
+                <button type="button" id="btnOfficerSend" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="sendOfficerQuestion()">Query</button>
+            </div>
         </div>
     </div>
 </div>
@@ -323,6 +341,75 @@
                 };
             }
         });
+
+        async function sendOfficerQuestion() {
+            const input = document.getElementById('officerQInput');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const chatHistory = document.getElementById('officerChatHistory');
+            const btnSend = document.getElementById('btnOfficerSend');
+
+            const userMsg = document.createElement('div');
+            userMsg.style.margin = '0.5rem 0';
+            userMsg.innerHTML = `<strong style="color:#0f172a;">Officer:</strong> ${question}`;
+            chatHistory.appendChild(userMsg);
+            input.value = '';
+            btnSend.disabled = true;
+
+            const aiMsg = document.createElement('div');
+            aiMsg.style.margin = '0.5rem 0';
+            aiMsg.style.color = '#1e3a8a';
+            const aiText = document.createElement('span');
+            aiMsg.innerHTML = `<strong style="color:#2563eb;">Copilot:</strong> `;
+            aiMsg.appendChild(aiText);
+            chatHistory.appendChild(aiMsg);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            try {
+                const encodedQ = encodeURIComponent(question);
+                const response = await fetch(`/Officer/OfficerChatStream?question=${encodedQ}&applicationId=@Model.ApplicationId`);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.replace('data: ', '').trim();
+                            if (dataStr === '[DONE]') break;
+
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                if (parsed.chunk) {
+                                    aiText.innerText += parsed.chunk;
+                                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                                }
+                                if (parsed.isFinal && parsed.citations && parsed.citations.length > 0) {
+                                    const citeEl = document.createElement('div');
+                                    citeEl.style.fontSize = '0.75rem';
+                                    citeEl.style.color = '#64748b';
+                                    citeEl.style.marginTop = '0.25rem';
+                                    citeEl.innerHTML = `<em>Source: ${parsed.citations[0].documentTitle} (${parsed.citations[0].section})</em>`;
+                                    aiMsg.appendChild(citeEl);
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+            } catch (err) {
+                aiText.innerText += ' [Network error]';
+            } finally {
+                btnSend.disabled = false;
+            }
+        }
     </script>
 }
 

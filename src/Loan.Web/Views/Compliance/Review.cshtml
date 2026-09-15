@@ -1,0 +1,206 @@
+@model Loan.Domain.Applications.LoanApplication
+@{
+    ViewData["Title"] = $"Compliance Audit: {Model.ApplicationId}";
+    ViewData["ActiveNav"] = "Compliance";
+    var rec = Model.CurrentRecommendation;
+    var ind = Model.Indicators;
+}
+
+<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+    <!-- Read-Only Audit Warning Banner -->
+    <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span style="font-size: 1.75rem;">🔒</span>
+            <div>
+                <h2 style="font-size: 1.1rem; font-weight: 800; color: #92400e; margin: 0;">READ-ONLY COMPLIANCE AUDIT MODE</h2>
+                <p style="font-size: 0.85rem; color: #78350f; margin: 0;">
+                    Compliance Reviewers hold read-only inspection authority. Modification of facts, underwriting overrides, and loan decisions are restricted to authorized Loan Officers.
+                </p>
+            </div>
+        </div>
+        <span class="badge" style="background: #92400e; color: white; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: 9999px; font-size: 0.8rem;">
+            Status: @Model.Status
+        </span>
+    </div>
+
+    <!-- Application Identification Header -->
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">File Under Audit</span>
+                <h1 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0.25rem 0;">Application #@Model.ApplicationId</h1>
+                <p style="font-size: 0.9rem; color: #475569; margin: 0;">
+                    Applicant: <strong>@Model.Facts.FullName</strong> &bull; Synthetic ID: <code>@Model.Facts.SyntheticId</code> &bull; Created: @Model.CreatedAtUtc.ToString("u")
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="/Compliance" class="btn" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.5rem 1rem; border-radius: 6px; color: #334155; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                    &larr; Return to Compliance Queue
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two-Column Audit Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Left: Fact Verification & Evidence Integrity -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Facts Card -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                    📋 Stated vs. Verified Fact Integrity (BR-02)
+                </h3>
+                <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.5rem 0;"><strong>Monthly Gross Income:</strong></td>
+                            <td style="padding: 0.5rem 0;">@Model.Facts.MonthlyGrossIncome</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <span class="badge @(Model.Facts.IsIncomeVerified ? "badge-success" : "badge-warning")" style="font-size: 0.72rem;">
+                                    @(Model.Facts.IsIncomeVerified ? "Verified (W-2/Paystub) ✓" : "Stated Fact")
+                                </span>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.5rem 0;"><strong>Monthly Debts:</strong></td>
+                            <td style="padding: 0.5rem 0;">@Model.Facts.MonthlyDebts</td>
+                            <td style="padding: 0.5rem 0; text-align: right;"><span class="badge badge-info" style="font-size: 0.72rem;">Declared</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.5rem 0;"><strong>Requested Loan Amount:</strong></td>
+                            <td style="padding: 0.5rem 0;">@Model.Facts.RequestedLoanAmount</td>
+                            <td style="padding: 0.5rem 0; text-align: right;"><span class="badge badge-info" style="font-size: 0.72rem;">Requested</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.5rem 0;"><strong>Estimated Property Value:</strong></td>
+                            <td style="padding: 0.5rem 0;">@Model.Facts.EstimatedPropertyValue</td>
+                            <td style="padding: 0.5rem 0; text-align: right;"><span class="badge badge-info" style="font-size: 0.72rem;">Appraisal</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 0.5rem 0;"><strong>Credit Score:</strong></td>
+                            <td style="padding: 0.5rem 0;">@Model.Facts.CreditScore</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <span class="badge @(Model.Facts.IsCreditVerified ? "badge-success" : "badge-warning")" style="font-size: 0.72rem;">
+                                    @(Model.Facts.IsCreditVerified ? "Bureau Verified ✓" : "Stated")
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0;"><strong>Identity Verification:</strong></td>
+                            <td style="padding: 0.5rem 0;" colspan="2">
+                                <span class="badge @(Model.Facts.IsIdentityVerified ? "badge-success" : "badge-danger")" style="font-size: 0.72rem;">
+                                    @(Model.Facts.IsIdentityVerified ? "CIP / KYC Identity Verified ✓" : "CIP Verification Incomplete")
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Uploaded Document Records -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                    📂 Document Provenance & Storage Verification
+                </h3>
+                @if (Model.Documents.Any())
+                {
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        @foreach (var doc in Model.Documents)
+                        {
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; font-size: 0.82rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <strong>@doc.FileName</strong>
+                                    <span class="badge badge-info" style="font-size: 0.7rem;">@doc.DocumentType</span>
+                                </div>
+                                <div style="color: #64748b; font-size: 0.75rem;">Storage Ref: <code>@doc.StorageReference</code></div>
+                                <div style="color: #64748b; font-size: 0.75rem;">SHA256: <code>@doc.HashSha256[..16]...</code></div>
+                                <div style="color: #059669; font-weight: 600; margin-top: 0.25rem;">Extraction: @doc.Status &bull; @doc.Fields.Count fields extracted</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p style="color: #64748b; font-size: 0.85rem;">No document files attached.</p>
+                }
+            </div>
+        </div>
+
+        <!-- Right: Policy Citations, Exceptions & Audit Timeline -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Deterministic Eligibility Indicators -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                    📐 Deterministic Ratios & Policy Compliance (BR-03)
+                </h3>
+                @if (ind != null)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Debt-to-Income (DTI)</span>
+                            <strong style="font-size: 1.4rem; color: @(ind.IsDtiEligible ? "#059669" : "#dc2626");">
+                                @(ind.DebtToIncomeRatio != null ? $"{ind.DebtToIncomeRatio:P1}" : "N/A")
+                            </strong>
+                            <span style="font-size: 0.72rem; color: #64748b; display: block;">Policy Cap: @Model.ProductRules.MaxDtiRatio.ToString("P1")</span>
+                        </div>
+                        <div style="background: #f8fafc; padding: 0.85rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Loan-to-Value (LTV)</span>
+                            <strong style="font-size: 1.4rem; color: @(ind.IsLtvEligible ? "#059669" : "#dc2626");">
+                                @(ind.LoanToValueRatio != null ? $"{ind.LoanToValueRatio:P1}" : "N/A")
+                            </strong>
+                            <span style="font-size: 0.72rem; color: #64748b; display: block;">Policy Cap: @Model.ProductRules.MaxLtvRatio.ToString("P1")</span>
+                        </div>
+                    </div>
+                }
+
+                @if (rec?.PolicyViolations.Any() == true)
+                {
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 0.75rem; border-radius: 8px; font-size: 0.82rem; color: #991b1b; margin-bottom: 0.75rem;">
+                        <strong>Policy Exceptions / Violations:</strong>
+                        <ul style="margin: 0.25rem 0 0 1rem; padding: 0;">
+                            @foreach (var v in rec.PolicyViolations)
+                            {
+                                <li>@v</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                @if (rec?.Citations.Any() == true)
+                {
+                    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.75rem; border-radius: 8px; font-size: 0.82rem;">
+                        <strong>Effective Policy Citation (@rec.Citations.First().PolicyVersion):</strong>
+                        <p style="margin: 0.25rem 0; font-style: italic;">"@rec.Citations.First().Excerpt"</p>
+                        <span style="font-size: 0.75rem; color: #64748b;">Source: @rec.Citations.First().DocumentTitle — @rec.Citations.First().SectionOrPage</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Immutable Audit Trail -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                    📜 Audit Trail & Chain of Custody
+                </h3>
+                <div style="max-height: 220px; overflow-y: auto;">
+                    @if (rec?.AuditTrail.Any() == true)
+                    {
+                        foreach (var aud in rec.AuditTrail)
+                        {
+                            <div style="border-bottom: 1px solid #f1f5f9; padding: 0.4rem 0; font-size: 0.8rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <strong>@aud.Action</strong>
+                                    <span style="color: #64748b;">@aud.TimestampUtc.ToString("u")</span>
+                                </div>
+                                <div style="color: #475569;">Actor: <code>@aud.PerformedBy</code> &bull; Notes: @aud.Notes</div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p style="color: #64748b; font-size: 0.82rem;">No audit records found.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

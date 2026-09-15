@@ -1,6 +1,7 @@
 using Loan.Application.Abstractions;
 using Loan.Infrastructure.Persistence.DbContext;
 using Loan.Infrastructure.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,8 +31,8 @@ public static class InfrastructureServiceCollectionExtensions
         // Register Azure OpenAI Chat Model
         services.AddSingleton<IChatModel, AzureOpenAI.AzureOpenAIChatModel>();
 
-        // Register Document Storage & Extractor
-        services.AddSingleton<IDocumentStorageService, Documents.LocalFileDocumentStorageService>();
+        // Register Document Storage & Extractor (Azure Blob Storage with fallback)
+        services.AddSingleton<IDocumentStorageService, Documents.AzureBlobDocumentStorageService>();
         services.AddScoped<IDocumentExtractor, Documents.SyntheticDocumentExtractor>();
 
         // Register Slice 4 CQRS Command Handlers
@@ -62,9 +63,67 @@ public static class InfrastructureServiceCollectionExtensions
     }
 
     public static async Task ApplyInfrastructureMigrationsAsync(this IServiceProvider serviceProvider)
+{
+    using var scope = serviceProvider.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<LoanDbContext>();
+
+    await dbContext.Database.MigrateAsync();
+}
+
+    public static async Task SeedIdentityUsersAndRolesAsync(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<LoanDbContext>();
-        await dbContext.Database.MigrateAsync();
+        var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+
+        string[] roles = ["Applicant", "LoanOfficer", "ComplianceReviewer", "Administrator"];
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole(role));
+            }
+        }
+
+        var demoUsers = new (string Email, string Password, string FullName, string Role, string? LinkedAppId)[]
+        {
+            ("applicant@apex.local", "Applicant123!", "Alice Cooper", "Applicant", "APP-2026-001"),
+            ("officer@apex.local", "Officer123!", "Marcus Vance (Loan Officer)", "LoanOfficer", null),
+            ("compliance@apex.local", "Compliance123!", "Sarah Jenkins (Compliance)", "ComplianceReviewer", null),
+            ("admin@apex.local", "Admin123!", "System Administrator", "Administrator", null)
+        };
+
+        foreach (var (email, password, fullName, role, linkedAppId) in demoUsers)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    FullName = fullName,
+                    LinkedApplicationId = linkedAppId,
+                    EmailConfirmed = true
+                };
+                var createResult = await userManager.CreateAsync(user, password);
+                if (createResult.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(user, role);
+                }
+            }
+            else
+            {
+                if (!await userManager.IsInRoleAsync(user, role))
+                {
+                    await userManager.AddToRoleAsync(user, role);
+                }
+                if (linkedAppId != null && user.LinkedApplicationId != linkedAppId)
+                {
+                    user.LinkedApplicationId = linkedAppId;
+                    await userManager.UpdateAsync(user);
+                }
+            }
+        }
     }
 }

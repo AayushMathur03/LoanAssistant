@@ -1,72 +1,129 @@
-@model IEnumerable<Loan.Domain.Applications.LoanApplication>
-
+@model Loan.Web.Models.OfficerDashboardViewModel
 @{
-    ViewData["Title"] = "Loan Officer Workqueue";
+    ViewData["Title"] = "Loan Officer Dashboard";
+    ViewData["ActiveNav"] = "Officer";
 }
 
-<div class="page-header">
-    <div>
-        <h1 class="page-title">Loan Officer Review Workqueue</h1>
-        <p class="page-subtitle">Review applications requiring human loan officer decision, policy exception sign-off, or evidence verification.</p>
+<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; background: #ecfdf5; padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                Authorized Officer Portal
+            </span>
+            <h1 style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin: 0.4rem 0 0.2rem 0;">Loan Officer Workqueue</h1>
+            <p style="font-size: 0.95rem; color: #64748b; margin: 0;">
+                Review flagged applications, inspect multi-agent recommendations, verify evidence, and execute binding approvals.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.85rem; font-weight: 700; padding: 0.45rem 0.85rem; border-radius: 8px;">
+                Human-in-the-Loop Sign-Off Required
+            </span>
+        </div>
     </div>
-    <span class="badge badge-warning">Human-in-the-Loop Required</span>
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">📥 Applications Pending Review</h2>
-        <span class="badge badge-info">@Model.Count() Queue Items</span>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
+            &#10003; @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <!-- 4 Metrics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Active Applications</span>
+            <div style="font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0.35rem 0;">@Model.TotalApplications</div>
+            <span style="font-size: 0.75rem; color: #2563eb;">Across All Lending Products</span>
+        </div>
+
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #d97706; text-transform: uppercase;">Ready for Review</span>
+            <div style="font-size: 2rem; font-weight: 800; color: #d97706; margin: 0.35rem 0;">@Model.ReadyForReviewCount</div>
+            <span style="font-size: 0.75rem; color: #64748b;">Pending Underwriter Action</span>
+        </div>
+
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #0284c7; text-transform: uppercase;">Pending Information</span>
+            <div style="font-size: 2rem; font-weight: 800; color: #0284c7; margin: 0.35rem 0;">@Model.PendingInfoCount</div>
+            <span style="font-size: 0.75rem; color: #64748b;">Awaiting Borrower Evidence</span>
+        </div>
+
+        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #059669; text-transform: uppercase;">Finalized (Approved / Rejected)</span>
+            <div style="font-size: 2rem; font-weight: 800; color: #059669; margin: 0.35rem 0;">@(Model.ApprovedCount + Model.RejectedCount)</div>
+            <span style="font-size: 0.75rem; color: #059669;">@Model.ApprovedCount Approved &bull; @Model.RejectedCount Rejected</span>
+        </div>
     </div>
 
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Application ID</th>
-                    <th>Applicant Name</th>
-                    <th>Product</th>
-                    <th>Loan Amount</th>
-                    <th>Calculated DTI</th>
-                    <th>Calculated LTV</th>
-                    <th>Recommendation Draft</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model != null && Model.Any())
-                {
-                    foreach (var app in Model)
+    <!-- Review Queue Table -->
+    <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">📥 Underwriting Review Queue</h2>
+            <span class="badge badge-info" style="font-size: 0.78rem; padding: 0.3rem 0.65rem;">@Model.ReviewQueue.Count Applications</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                        <th style="padding: 0.75rem;">Application ID</th>
+                        <th style="padding: 0.75rem;">Applicant</th>
+                        <th style="padding: 0.75rem;">Product</th>
+                        <th style="padding: 0.75rem;">Requested Loan</th>
+                        <th style="padding: 0.75rem;">Calculated DTI</th>
+                        <th style="padding: 0.75rem;">Calculated LTV</th>
+                        <th style="padding: 0.75rem;">AI Recommendation</th>
+                        <th style="padding: 0.75rem;">Status</th>
+                        <th style="padding: 0.75rem;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ReviewQueue.Any())
                     {
-                        var recType = app.CurrentRecommendation?.DecisionRecommendation.ToString() ?? "Pending Verification";
+                        foreach (var app in Model.ReviewQueue)
+                        {
+                            var recType = app.CurrentRecommendation?.DecisionRecommendation.ToString() ?? "Draft In Progress";
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 0.75rem;"><strong>@app.ApplicationId</strong></td>
+                                <td style="padding: 0.75rem;">@app.Facts.FullName</td>
+                                <td style="padding: 0.75rem;">@app.ProductRules.ProductName</td>
+                                <td style="padding: 0.75rem;">@app.Facts.RequestedLoanAmount</td>
+                                <td style="padding: 0.75rem;">
+                                    @(app.Indicators?.DebtToIncomeRatio != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "Evaluating")
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    @(app.Indicators?.LoanToValueRatio != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <span class="badge @(recType == "Approve" ? "badge-success" : recType == "ReferToHuman" ? "badge-warning" : "badge-info")" style="font-size: 0.75rem;">
+                                        @recType
+                                    </span>
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <span class="badge @(app.Status == ApplicationStatus.Approved ? "badge-success" : app.Status == ApplicationStatus.Rejected ? "badge-danger" : "badge-warning")" style="font-size: 0.75rem;">
+                                        @app.Status
+                                    </span>
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <a href="/Officer/Review/@app.ApplicationId" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 600; text-decoration: none; border-radius: 6px; background: #2563eb; color: white;">
+                                        Review Application &rarr;
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
                         <tr>
-                            <td><strong>@app.ApplicationId</strong></td>
-                            <td>@app.Facts.FullName</td>
-                            <td>@app.ProductRules.ProductName</td>
-                            <td>@app.Facts.RequestedLoanAmount</td>
-                            <td>@(app.Indicators != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "N/A")</td>
-                            <td>@(app.Indicators != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")</td>
-                            <td>
-                                <span class="badge @(recType == "Approve" ? "badge-success" : recType == "PendingInformation" ? "badge-warning" : "badge-info")">
-                                    @recType
-                                </span>
-                            </td>
-                            <td><span class="badge badge-warning">@app.Status</span></td>
-                            <td>
-                                <a href="/Officer/Review/@app.ApplicationId" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">Review Application →</a>
+                            <td colspan="9" style="text-align: center; color: #64748b; padding: 2rem;">
+                                Queue is clear. No applications currently pending officer review.
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                            Workqueue is clear. No applications currently pending loan officer review.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

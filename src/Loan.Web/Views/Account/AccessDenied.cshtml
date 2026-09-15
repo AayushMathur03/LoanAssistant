@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "_Layout";
+}
+
+<div style="max-width: 600px; margin: 4rem auto; text-align: center; padding: 2rem;">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #dc2626; font-size: 2rem; margin-bottom: 1.5rem;">
+        &#9888;
+    </div>
+    <h1 style="font-size: 1.75rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">Access Denied (HTTP 403)</h1>
+    <p style="color: #64748b; font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.5;">
+        You do not have the required role or authorization permissions to access this resource or execute this operation.
+    </p>
+
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 2rem; text-align: left; font-size: 0.85rem; color: #475569;">
+        <strong>Role-Based Access Control (RBAC) Enforcement:</strong>
+        <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+            <li><strong>Applicant:</strong> Limited strictly to borrower application details, document uploads, and product advice.</li>
+            <li><strong>Loan Officer:</strong> Authorized for underwriting review queue and final binding decisions.</li>
+            <li><strong>Compliance Reviewer:</strong> Read-only inspection of applications, evidence, citations, and audit logs.</li>
+            <li><strong>Administrator:</strong> AI governance, telemetry, and integration status monitoring.</li>
+        </ul>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/" class="btn" style="padding: 0.6rem 1.25rem; border: 1px solid #cbd5e1; border-radius: 6px; color: #334155; text-decoration: none; font-weight: 500;">
+            Return to Home
+        </a>
+        <form asp-controller="Account" asp-action="Logout" method="post" style="display: inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn" style="padding: 0.6rem 1.25rem; background: #2563eb; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: 500;">
+                Switch Persona
+            </button>
+        </form>
+    </div>
+</div>

@@ -5,11 +5,13 @@ using Loan.Domain.Documents;
 using Loan.Domain.Eligibility;
 using Loan.Domain.Products;
 using Loan.Domain.Recommendations;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Loan.Infrastructure.Persistence.DbContext;
 
-public class LoanDbContext : Microsoft.EntityFrameworkCore.DbContext
+public class LoanDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
 {
     public DbSet<LoanApplicationEntity> Applications => Set<LoanApplicationEntity>();
     public DbSet<RecommendationEntity> Recommendations => Set<RecommendationEntity>();
