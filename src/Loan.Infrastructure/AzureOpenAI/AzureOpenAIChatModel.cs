@@ -20,11 +20,16 @@ public class AzureOpenAIChatModel : IChatModel
     private readonly string _missingConfigReason;
 
     private readonly ITelemetryCollector? _telemetryCollector;
+    private readonly Resilience.ResiliencePolicy _resiliencePolicy;
 
-    public AzureOpenAIChatModel(IConfiguration configuration, ITelemetryCollector? telemetryCollector = null)
+    public AzureOpenAIChatModel(
+        IConfiguration configuration,
+        ITelemetryCollector? telemetryCollector = null,
+        Resilience.ResiliencePolicy? resiliencePolicy = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         _telemetryCollector = telemetryCollector;
+        _resiliencePolicy = resiliencePolicy ?? new Resilience.ResiliencePolicy();
 
         _endpoint = configuration["AzureOpenAI:Endpoint"] ?? string.Empty;
         var apiKey = configuration["AzureOpenAI:ApiKey"] ?? string.Empty;
@@ -37,8 +42,7 @@ public class AzureOpenAIChatModel : IChatModel
         {
             _isConfigured = false;
             _missingConfigReason = "Azure OpenAI configuration is incomplete. " +
-                "Please configure 'AzureOpenAI:Endpoint', 'AzureOpenAI:ApiKey', and 'AzureOpenAI:DeploymentName' in User Secrets " +
-                "(e.g., dotnet user-secrets set \"AzureOpenAI:ApiKey\" \"<your-key>\" --project src/Loan.Web).";
+                "Please configure 'AzureOpenAI:Endpoint', 'ApiKey', and 'DeploymentName' in User Secrets.";
             return;
         }
 
@@ -70,23 +74,36 @@ public class AzureOpenAIChatModel : IChatModel
         };
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var response = await _chatClient!.CompleteChatAsync(chatMessages, options, cancellationToken);
-        sw.Stop();
 
-        _telemetryCollector?.RecordLlmLatency(sw.Elapsed.TotalMilliseconds);
-
-        var completion = response.Value;
-        if (completion.Usage != null)
+        try
         {
-            _telemetryCollector?.RecordTokens(completion.Usage.InputTokenCount, completion.Usage.OutputTokenCount);
-        }
+            var completion = await _resiliencePolicy.ExecuteAsync(async ct =>
+            {
+                var response = await _chatClient!.CompleteChatAsync(chatMessages, options, ct);
+                return response.Value;
+            }, cancellationToken);
 
-        if (completion.Content != null && completion.Content.Count > 0)
+            sw.Stop();
+            _telemetryCollector?.RecordLlmLatency(sw.Elapsed.TotalMilliseconds);
+
+            if (completion.Usage != null)
+            {
+                _telemetryCollector?.RecordTokens(completion.Usage.InputTokenCount, completion.Usage.OutputTokenCount);
+            }
+
+            if (completion.Content != null && completion.Content.Count > 0)
+            {
+                return completion.Content[0].Text ?? string.Empty;
+            }
+
+            return string.Empty;
+        }
+        catch (Exception)
         {
-            return completion.Content[0].Text ?? string.Empty;
+            sw.Stop();
+            _telemetryCollector?.RecordError("LlmUnavailable");
+            return "Degraded Service: AI model completion is temporarily unavailable. Detailed policy analysis must be conducted manually by an authorized loan officer.";
         }
-
-        return string.Empty;
     }
 
     public async Task<T> GenerateStructuredAsync<T>(

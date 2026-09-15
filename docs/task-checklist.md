@@ -100,7 +100,14 @@
   - Exposed `GET /health/telemetry` endpoint returning real measurable request telemetry metrics.
   - Ensured PII/secret safety across all telemetry logs via `PiiMasker`.
   - Added unit & integration tests (`StructuredTelemetryTests.cs`) and verified 119/119 tests passing.
-- [ ] Step 10.3: Resilience & Transient Policy Controls
+- [x] **Step 10.3: Resilience & Transient Policy Controls**:
+  - Implemented `ResiliencePolicy` supporting configurable max retries (3), exponential backoff with random jitter, caller-cancellation guards, standardized 10-second call timeouts, and circuit breaker state management (`Closed`, `Open`, `HalfOpen`).
+  - **Caller Cancellation vs Transient Timeout**: `OperationCanceledException` caused by explicit caller cancellation (`cancellationToken.IsCancellationRequested == true`) immediately stops execution without retrying or incrementing circuit failure count. Internal call timeouts (10s) are treated as transient failures and retried up to `MaxRetries`.
+  - **Circuit Breaker Isolation**: Registered individual `ResiliencePolicy` instances per client so failure of Azure OpenAI chat model does not affect Azure AI Search query retriever or open its circuit breaker.
+  - **Safe Degraded Behavior**: Azure OpenAI outage returns safe degraded completion message; Azure AI Search outage returns safe empty policy search DTOs without falling back to `SyntheticPolicyRetriever`.
+  - **Write Safety**: Guaranteed that `save_draft`, officer decisions, and document field overrides carry NO automatic retries to prevent duplicate side-effects.
+  - Added unit & end-to-end tests (`ResilienceTests.cs`) covering caller cancellation, transient timeout retries, circuit breaker isolation, degraded LLM fallbacks, and safe search empty returns.
+  - Verified full test suite passing (**126/126 tests passing** across all 6 test projects).
 - [ ] Step 10.4: 20-Prompt Evaluation Suite & Runner
 - [ ] Step 10.5: Production Database Migration Strategy & Azure Configuration
 - [ ] Step 10.6: Rollback Documentation & Final Demonstration Evidence

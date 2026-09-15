@@ -16,15 +16,18 @@ public class AzureAiSearchPolicyRetriever : IPolicyRetriever
     private readonly IConfiguration _configuration;
     private readonly ILogger<AzureAiSearchPolicyRetriever> _logger;
     private readonly ITelemetryCollector? _telemetryCollector;
+    private readonly Resilience.ResiliencePolicy _resiliencePolicy;
 
     public AzureAiSearchPolicyRetriever(
         IConfiguration configuration,
         ILogger<AzureAiSearchPolicyRetriever> logger,
-        ITelemetryCollector? telemetryCollector = null)
+        ITelemetryCollector? telemetryCollector = null,
+        Resilience.ResiliencePolicy? resiliencePolicy = null)
     {
         _configuration = configuration;
         _logger = logger;
         _telemetryCollector = telemetryCollector;
+        _resiliencePolicy = resiliencePolicy ?? new Resilience.ResiliencePolicy();
     }
 
     public async Task<IEnumerable<PolicySearchResultDto>> SearchPolicyAsync(
@@ -45,102 +48,107 @@ public class AzureAiSearchPolicyRetriever : IPolicyRetriever
         if (string.IsNullOrWhiteSpace(searchEndpoint) || string.IsNullOrWhiteSpace(searchApiKey) ||
             string.IsNullOrWhiteSpace(openAiEndpoint) || string.IsNullOrWhiteSpace(openAiApiKey))
         {
-            throw new InvalidOperationException("Azure AI Search or Azure OpenAI configuration is incomplete. " +
-                "Please configure 'AzureAISearch:Endpoint', 'ApiKey', 'AzureOpenAI:Endpoint', and 'ApiKey' via User Secrets.");
+            _logger.LogWarning("Azure AI Search or Azure OpenAI configuration is incomplete. Returning safe empty policy results.");
+            _telemetryCollector?.RecordError("SearchUnavailable");
+            return Enumerable.Empty<PolicySearchResultDto>();
         }
 
         try
         {
-            // 1. Generate query embedding vector
-            var openAiUri = new Uri(openAiEndpoint);
-            var openAiCredential = new ApiKeyCredential(openAiApiKey);
-            var azureOpenAiClient = new AzureOpenAIClient(openAiUri, openAiCredential);
-            var embeddingClient = azureOpenAiClient.GetEmbeddingClient(embeddingDeployment);
-
-            _logger.LogInformation("Generating query embedding for search query: '{Query}'", query);
-            OpenAIEmbedding queryEmbedding = await embeddingClient.GenerateEmbeddingAsync(query, cancellationToken: cancellationToken);
-            ReadOnlyMemory<float> queryVector = queryEmbedding.ToFloats();
-
-            // 2. Perform Hybrid Search on Azure AI Search
-            var searchUri = new Uri(searchEndpoint);
-            var searchCredential = new AzureKeyCredential(searchApiKey);
-            var searchClient = new SearchClient(searchUri, indexName, searchCredential);
-
-            var searchOptions = new SearchOptions
+            return await _resiliencePolicy.ExecuteAsync(async ct =>
             {
-                Size = topK,
-                VectorSearch = new VectorSearchOptions
+                // 1. Generate query embedding vector
+                var openAiUri = new Uri(openAiEndpoint);
+                var openAiCredential = new ApiKeyCredential(openAiApiKey);
+                var azureOpenAiClient = new AzureOpenAIClient(openAiUri, openAiCredential);
+                var embeddingClient = azureOpenAiClient.GetEmbeddingClient(embeddingDeployment);
+
+                _logger.LogInformation("Generating query embedding for search query: '{Query}'", query);
+                OpenAIEmbedding queryEmbedding = await embeddingClient.GenerateEmbeddingAsync(query, cancellationToken: ct);
+                ReadOnlyMemory<float> queryVector = queryEmbedding.ToFloats();
+
+                // 2. Perform Hybrid Search on Azure AI Search
+                var searchUri = new Uri(searchEndpoint);
+                var searchCredential = new AzureKeyCredential(searchApiKey);
+                var searchClient = new SearchClient(searchUri, indexName, searchCredential);
+
+                var searchOptions = new SearchOptions
                 {
-                    Queries =
+                    Size = topK,
+                    VectorSearch = new VectorSearchOptions
                     {
-                        new VectorizedQuery(queryVector)
+                        Queries =
                         {
-                            KNearestNeighborsCount = topK * 5,
-                            Fields = { "contentVector" }
+                            new VectorizedQuery(queryVector)
+                            {
+                                KNearestNeighborsCount = topK * 5,
+                                Fields = { "contentVector" }
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            // Build filter string using standard Azure AI Search OData syntax
-            var filters = new List<string>();
-            if (!string.IsNullOrWhiteSpace(targetProductId))
-            {
-                filters.Add($"search.in(productId, '{targetProductId}, ALL', ',')");
-            }
-            if (!string.IsNullOrWhiteSpace(effectiveVersion))
-            {
-                filters.Add($"policyVersion eq '{effectiveVersion}'");
-            }
-            else
-            {
-                filters.Add("isActive eq true");
-            }
-
-            if (filters.Count > 0)
-            {
-                searchOptions.Filter = string.Join(" and ", filters);
-            }
-
-            _logger.LogInformation("Executing Hybrid Search on index '{Index}' with query: '{Query}', Filter: '{Filter}'", indexName, query, searchOptions.Filter);
-            
-            SearchResults<PolicyIndexDocument> searchResults = await searchClient.SearchAsync<PolicyIndexDocument>(query, searchOptions, cancellationToken);
-
-            var dtos = new List<PolicySearchResultDto>();
-            await foreach (SearchResult<PolicyIndexDocument> result in searchResults.GetResultsAsync())
-            {
-                var doc = result.Document;
-                double score = result.Score ?? 0.0;
-
-                // Hybrid RRF score threshold: Relevant hybrid matches (text + vector) score >= ~0.02.
-                // Pure vector noise with zero keyword match scores <= 0.0164.
-                if (score < 0.0165)
+                // Build filter string using standard Azure AI Search OData syntax
+                var filters = new List<string>();
+                if (!string.IsNullOrWhiteSpace(targetProductId))
                 {
-                    continue;
+                    filters.Add($"search.in(productId, '{targetProductId}, ALL', ',')");
+                }
+                if (!string.IsNullOrWhiteSpace(effectiveVersion))
+                {
+                    filters.Add($"policyVersion eq '{effectiveVersion}'");
+                }
+                else
+                {
+                    filters.Add("isActive eq true");
                 }
 
-                dtos.Add(new PolicySearchResultDto(
-                    DocumentId: doc.DocumentId,
-                    Title: doc.Title,
-                    Version: doc.PolicyVersion,
-                    Section: doc.Section,
-                    Content: doc.Content,
-                    SimilarityScore: score,
-                    Citation: new CitationDto(
-                        DocumentTitle: doc.Title,
-                        PolicyVersion: doc.PolicyVersion,
-                        SectionOrPage: doc.Section,
-                        Excerpt: doc.Excerpt)));
-            }
+                if (filters.Count > 0)
+                {
+                    searchOptions.Filter = string.Join(" and ", filters);
+                }
 
-            sw.Stop();
-            _telemetryCollector?.RecordRagLatency(sw.Elapsed.TotalMilliseconds, dtos.Count);
-            return dtos;
+                _logger.LogInformation("Executing Hybrid Search on index '{Index}' with query: '{Query}', Filter: '{Filter}'", indexName, query, searchOptions.Filter);
+                
+                SearchResults<PolicyIndexDocument> searchResults = await searchClient.SearchAsync<PolicyIndexDocument>(query, searchOptions, ct);
+
+                var dtos = new List<PolicySearchResultDto>();
+                await foreach (SearchResult<PolicyIndexDocument> result in searchResults.GetResultsAsync())
+                {
+                    var doc = result.Document;
+                    double score = result.Score ?? 0.0;
+
+                    if (score < 0.0165)
+                    {
+                        continue;
+                    }
+
+                    dtos.Add(new PolicySearchResultDto(
+                        DocumentId: doc.DocumentId,
+                        Title: doc.Title,
+                        Version: doc.PolicyVersion,
+                        Section: doc.Section,
+                        Content: doc.Content,
+                        SimilarityScore: score,
+                        Citation: new CitationDto(
+                            DocumentTitle: doc.Title,
+                            PolicyVersion: doc.PolicyVersion,
+                            SectionOrPage: doc.Section,
+                            Excerpt: doc.Excerpt)));
+                }
+
+                sw.Stop();
+                _telemetryCollector?.RecordRagLatency(sw.Elapsed.TotalMilliseconds, dtos.Count);
+                return dtos;
+            }, cancellationToken);
         }
-        catch (Exception ex) when (ex is not InvalidOperationException)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing Azure AI Search query.");
-            throw new InvalidOperationException("Failed to retrieve policy documents from Azure AI Search.", ex);
+            sw.Stop();
+            _logger.LogError(ex, "Azure AI Search query failed or circuit opened after resilience retries. Returning safe degraded empty policy results without synthetic fallback.");
+            _telemetryCollector?.RecordError("SearchUnavailable");
+            _telemetryCollector?.RecordRagLatency(sw.Elapsed.TotalMilliseconds, 0);
+            return Enumerable.Empty<PolicySearchResultDto>();
         }
     }
 }

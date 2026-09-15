@@ -87,7 +87,7 @@ public class AzureAiSearchIntegrationTests
     }
 
     [Test]
-    public void AzureAiSearchPolicyRetriever_MissingCredentials_ShouldThrowExplicitException()
+    public async Task AzureAiSearchPolicyRetriever_MissingCredentials_ShouldReturnEmptyResultsSafely()
     {
         var emptyConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -98,10 +98,10 @@ public class AzureAiSearchIntegrationTests
         var logger = NullLogger<AzureAiSearchPolicyRetriever>.Instance;
         var retriever = new AzureAiSearchPolicyRetriever(emptyConfig, logger);
 
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await retriever.SearchPolicyAsync("Maximum DTI ratio for residential mortgage"));
+        var results = await retriever.SearchPolicyAsync("Maximum DTI ratio for residential mortgage");
 
-        Assert.That(ex!.Message, Does.Contain("Azure AI Search or Azure OpenAI configuration is incomplete"));
+        Assert.That(results, Is.Not.Null);
+        Assert.That(results, Is.Empty);
     }
 
     [Test]

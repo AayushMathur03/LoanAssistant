@@ -2,6 +2,20 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Step 10.3 Resilience & Transient Policy Controls Passed] - 2026-09-15
+
+### Added & Verified
+- **Resilience Policy & Transient Controls (`Loan.Infrastructure.Resilience`, `Loan.EndToEndTests`)**:
+  - Implemented `ResiliencePolicy` supporting configurable max retries (3), exponential backoff with random jitter, explicit caller-cancellation guards, standardized 10-second call timeouts, and circuit breaker state management (`Closed`, `Open`, `HalfOpen`).
+  - **Explicit Cancellation Distinction**: Guarded against retrying normal caller cancellation (`cancellationToken.IsCancellationRequested == true`); caller cancellations immediately rethrow without retrying or opening circuit breaker. Internal call timeouts (10s) trigger bounded retries.
+  - **Circuit Breaker Isolation**: Configured independent `ResiliencePolicy` instances per client so that an OpenAI circuit opening does not impact Azure AI Search operations.
+  - Wrapped safe read-only Azure OpenAI completion calls in `AzureOpenAIChatModel` with `ResiliencePolicy`, returning a safe degraded fallback message (*"Degraded Service: AI model completion is temporarily unavailable. Detailed policy analysis must be conducted manually by an authorized loan officer."*) on outage or open circuit.
+  - Wrapped safe read-only Azure AI Search queries and embedding generation in `AzureAiSearchPolicyRetriever` with `ResiliencePolicy`, returning safe empty policy results (`Enumerable.Empty<PolicySearchResultDto>()`) on outage without falling back to `SyntheticPolicyRetriever`.
+  - Preserved strict production rule: Azure AI Search outages must NEVER fall back to `SyntheticPolicyRetriever` in real application paths.
+  - Guaranteed that consequential write operations (`save_draft`, officer decisions, document overrides) carry NO blind retries, preventing duplicate write side-effects and preserving state idempotency.
+  - Added unit and end-to-end tests (`ResilienceTests.cs`) covering caller cancellation, transient timeout retries, circuit breaker isolation, degraded LLM fallbacks, and safe search empty returns.
+  - Verified **126/126 tests passing** across all 6 test projects.
+
 ## [Step 10.2 Structured Telemetry & Token Tracking Passed] - 2026-09-15
 
 ### Added & Verified
