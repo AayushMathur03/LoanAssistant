@@ -517,45 +517,87 @@
                                                 @doc.DocumentType
                                             </span>
                                         </td>
-                                        <td style="padding: 0.6rem 0.75rem;">
-                                            @foreach (var f in doc.Fields.Take(3))
-                                            {
-                                                <div style="margin-bottom: 0.2rem;">
-                                                    <span style="color: #475569;">@f.FieldName:</span> <strong>@f.DisplayValue</strong>
-                                                </div>
-                                            }
+                                        <td style="padding: 0.75rem;">
+                                            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                                                @foreach (var f in doc.Fields)
+                                                {
+                                                    var isLow = f.ConfidenceScore < 0.85f;
+                                                    <div style="background: @(isLow ? "#fffbeb" : "#f8fafc"); border: 1px solid @(isLow ? "#fde68a" : "#e2e8f0"); border-radius: 6px; padding: 0.35rem 0.5rem; font-size: 0.8rem;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                                            <div>
+                                                                <strong style="color: #1e293b;">@f.FieldName:</strong>
+                                                                <span style="font-family: monospace; font-weight: 700; color: #0284c7;">@(f.IsSensitive ? f.RawValueMasked : f.DisplayValue)</span>
+                                                                @if (f.IsSensitive)
+                                                                {
+                                                                    <span style="font-size: 0.65rem; background: #f1f5f9; color: #64748b; padding: 0.1rem 0.3rem; border-radius: 4px; margin-left: 0.25rem;">🔒 Masked</span>
+                                                                }
+                                                            </div>
+                                                            <span style="font-size: 0.7rem; font-weight: 700; color: @(isLow ? "#b45309" : "#047857"); background: @(isLow ? "#fef3c7" : "#d1fae5"); padding: 0.15rem 0.4rem; border-radius: 4px;">
+                                                                @( (int)(f.ConfidenceScore * 100) )%
+                                                            </span>
+                                                        </div>
+                                                        @if (!string.IsNullOrWhiteSpace(f.ProvenanceExcerpt))
+                                                        {
+                                                            <div style="font-size: 0.7rem; color: #64748b; margin-top: 0.2rem; font-style: italic;">
+                                                                💬 @f.ProvenanceExcerpt
+                                                            </div>
+                                                        }
+                                                        @if (f.NeedsConfirmation && f.Status == Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed)
+                                                        {
+                                                            <div style="margin-top: 0.3rem;">
+                                                                <button type="button" class="btn" style="background: #f59e0b; color: white; border: none; font-size: 0.72rem; padding: 0.25rem 0.55rem; border-radius: 4px; cursor: pointer; font-weight: 700; width: 100%;" onclick="openConfirmModal('@app.ApplicationId', '@doc.DocumentId', '@f.FieldName', '@f.DisplayValue')">
+                                                                    ⚠️ Confirm / Override @f.FieldName
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div style="font-size: 0.68rem; color: #059669; margin-top: 0.15rem; font-weight: 600;">
+                                                                ✓ Fact Active in Underwriting Ratios
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
                                         </td>
-                                        <td style="padding: 0.6rem 0.75rem;">
+                                        <td style="padding: 0.6rem 0.75rem; vertical-align: top;">
                                             @{
                                                 var avgConf = doc.Fields.Any() ? doc.Fields.Average(f => f.ConfidenceScore) : 1.0f;
                                                 var confPercent = (int)(avgConf * 100);
                                                 var isHighConf = confPercent >= 85;
                                             }
-                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <div style="width: 70px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                                    <div style="width: @confPercent%; height: 100%; background: @(isHighConf ? "#059669" : "#d97706");"></div>
+                                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                                    <div style="width: 60px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                                                        <div style="width: @confPercent%; height: 100%; background: @(isHighConf ? "#059669" : "#d97706");"></div>
+                                                    </div>
+                                                    <span style="font-size: 0.75rem; font-weight: 700; color: @(isHighConf ? "#059669" : "#d97706");">@confPercent%</span>
                                                 </div>
-                                                <span style="font-size: 0.75rem; font-weight: 700; color: @(isHighConf ? "#059669" : "#d97706");">@confPercent%</span>
+                                                <span style="font-size: 0.68rem; color: #64748b;">
+                                                    @(isHighConf ? "GPT-4o Verified" : "Verification Required")
+                                                </span>
                                             </div>
                                         </td>
-                                        <td style="padding: 0.6rem 0.75rem;">
+                                        <td style="padding: 0.6rem 0.75rem; vertical-align: top;">
                                             <span class="badge" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: @(doc.Fields.All(f => !f.NeedsConfirmation) ? "#d1fae5" : "#fef3c7"); color: @(doc.Fields.All(f => !f.NeedsConfirmation) ? "#065f46" : "#92400e");">
                                                 @(doc.Fields.All(f => !f.NeedsConfirmation) ? "✓ Confirmed" : "Needs Review")
                                             </span>
                                         </td>
-                                        <td style="padding: 0.6rem 0.75rem;">
+                                        <td style="padding: 0.6rem 0.75rem; vertical-align: top;">
                                             @{
-                                                var unconfirmed = doc.Fields.FirstOrDefault(f => f.NeedsConfirmation && f.Status == Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed);
+                                                var pendingCount = doc.Fields.Count(f => f.NeedsConfirmation && f.Status == Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed);
                                             }
-                                            @if (unconfirmed != null)
+                                            @if (pendingCount > 0)
                                             {
-                                                <button type="button" class="btn" style="background: #f59e0b; color: white; border: none; font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 6px; cursor: pointer; font-weight: 700;" onclick="openConfirmModal('@app.ApplicationId', '@doc.DocumentId', '@unconfirmed.FieldName', '@unconfirmed.DisplayValue')">
-                                                    ⚠️ Confirm @unconfirmed.FieldName
-                                                </button>
+                                                <span style="font-size: 0.75rem; color: #b45309; font-weight: 700;">
+                                                    @pendingCount Field(s) Pending Confirmation
+                                                </span>
                                             }
                                             else
                                             {
-                                                <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">✓ Accepted</span>
+                                                <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">
+                                                    ✓ All Facts Accepted
+                                                </span>
                                             }
                                         </td>
                                     </tr>

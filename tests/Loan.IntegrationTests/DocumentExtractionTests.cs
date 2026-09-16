@@ -67,4 +67,99 @@ public class DocumentExtractionTests
         Assert.That(employer2, Is.EqualTo("Beta Industries"));
         Assert.That(employer1, Is.Not.EqualTo(employer2));
     }
+
+    [Test]
+    public async Task AzureOpenAiDocumentExtractor_WhenLlmThrowsOrUnavailable_FallsBackToSyntheticGracefully()
+    {
+        var mockChat = new MockFailingChatModel();
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AzureOpenAiDocumentExtractor>.Instance;
+        var extractor = new AzureOpenAiDocumentExtractor(mockChat, _extractor, logger);
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Gross Pay: 12000.00\nEmployer: Apex Financial"));
+        var result = await extractor.ExtractFieldsAsync(stream, "applicant_paystub.pdf", "application/pdf");
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.DocumentType, Is.EqualTo("Paystub"));
+        Assert.That(result.ExtractedFields, Is.Not.Empty);
+    }
+
+    [Test]
+    public async Task AzureOpenAiDocumentExtractor_WithStructuredLlmResponse_ParsesFieldsAndScoresCorrectly()
+    {
+        var jsonResponse = @"{
+            ""documentType"": ""Paystub"",
+            ""fields"": [
+                {
+                    ""fieldName"": ""MonthlyGrossIncome"",
+                    ""rawValue"": ""14500.00"",
+                    ""confidenceScore"": 0.98,
+                    ""evidenceSnippet"": ""Monthly Gross Earnings: $14,500.00"",
+                    ""isSensitive"": false
+                },
+                {
+                    ""fieldName"": ""EmployerName"",
+                    ""rawValue"": ""Quantum Tech Ltd"",
+                    ""confidenceScore"": 0.95,
+                    ""evidenceSnippet"": ""Employer: Quantum Tech Ltd"",
+                    ""isSensitive"": false
+                }
+            ]
+        }";
+
+        var mockChat = new MockSuccessChatModel(jsonResponse);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<AzureOpenAiDocumentExtractor>.Instance;
+        var extractor = new AzureOpenAiDocumentExtractor(mockChat, _extractor, logger);
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("Any document payload"));
+        var result = await extractor.ExtractFieldsAsync(stream, "QuantumTech_Paystub.pdf", "application/pdf");
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.DocumentType, Is.EqualTo("Paystub"));
+        Assert.That(result.ExtractedFields.Count, Is.EqualTo(2));
+
+        var incField = result.ExtractedFields.First(f => f.FieldName == "MonthlyGrossIncome");
+        Assert.That(incField.RawValue, Is.EqualTo("14500.00"));
+        Assert.That(incField.ConfidenceScore, Is.EqualTo(0.98f));
+        Assert.That(incField.NeedsConfirmation, Is.False);
+    }
+
+    private class MockFailingChatModel : Loan.Application.Abstractions.IChatModel
+    {
+        public Task<string> GenerateCompletionAsync(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.2, System.Threading.CancellationToken cancellationToken = default)
+        {
+            throw new System.Net.Http.HttpRequestException("Simulated Azure OpenAI connection failure");
+        }
+
+        public IAsyncEnumerable<string> StreamCompletionAsync(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.2, System.Threading.CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<T> GenerateStructuredAsync<T>(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.1, System.Threading.CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    private class MockSuccessChatModel : Loan.Application.Abstractions.IChatModel
+    {
+        private readonly string _response;
+        public MockSuccessChatModel(string response) => _response = response;
+
+        public Task<string> GenerateCompletionAsync(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.2, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_response);
+        }
+
+        public IAsyncEnumerable<string> StreamCompletionAsync(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.2, System.Threading.CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<T> GenerateStructuredAsync<T>(System.Collections.Generic.IEnumerable<Loan.Application.Abstractions.ChatMessage> messages, double temperature = 0.1, System.Threading.CancellationToken cancellationToken = default)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
 }
+

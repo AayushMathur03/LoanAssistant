@@ -155,4 +155,34 @@ public class AdminController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+    [HttpPost]
+    public async Task<IActionResult> SyncSeedPolicies(CancellationToken cancellationToken)
+    {
+        ViewData["ActiveNav"] = "Admin";
+        if (_policyIndexer == null)
+        {
+            TempData["ErrorMessage"] = "PolicyIndexer service is not available.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            var seedDir = Path.Combine(Directory.GetCurrentDirectory(), "src", "Loan.Infrastructure", "Search", "SeedPolicies");
+            if (!Directory.Exists(seedDir))
+            {
+                seedDir = Path.Combine(AppContext.BaseDirectory, "Search", "SeedPolicies");
+            }
+
+            await _policyIndexer.SynchronizeIndexAndSeedAsync(seedDir, cancellationToken);
+            TempData["SuccessMessage"] = "Successfully synchronized all authoritative policy guides into Azure AI Search ('loan-policies-index') using text-embedding-3-small vector embeddings!";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Policy synchronization failed: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
 }
+

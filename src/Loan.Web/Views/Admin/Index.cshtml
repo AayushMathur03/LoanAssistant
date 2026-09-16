@@ -111,8 +111,23 @@
                 </div>
             </div>
 
+            <!-- One-Click Synchronize Seed Policies to Azure AI Search -->
+            <form asp-action="SyncSeedPolicies" method="post" style="margin-top: 1.25rem; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 1rem;">
+                @Html.AntiForgeryToken()
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong style="font-size: 0.88rem; color: #1e3a8a;">🔄 Synchronize Authoritative Policies to Azure AI Search</strong>
+                    <span style="font-size: 0.72rem; color: #2563eb; font-weight: 700; background: #dbeafe; padding: 0.15rem 0.5rem; border-radius: 9999px;">text-embedding-3-small</span>
+                </div>
+                <p style="font-size: 0.78rem; color: #475569; margin: 0 0 0.75rem 0; line-height: 1.4;">
+                    Scans all 8 canonical underwriting guides in <code>Search/SeedPolicies/</code>, chunks policy sections, generates 1536-dimensional embeddings with Azure OpenAI, and updates index <code>loan-policies-index</code> with HNSW vector configurations.
+                </p>
+                <button type="submit" class="btn" style="width: 100%; background: #1e40af; color: white; border: none; padding: 0.55rem; border-radius: 6px; font-weight: 700; font-size: 0.84rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                    <span>⚡ Run One-Click Policy Indexing & Synchronization Now</span>
+                </button>
+            </form>
+
             <!-- Dynamic Policy Upload & Vector Re-Indexing Form (Task 6) -->
-            <form asp-action="UploadPolicyDocument" method="post" enctype="multipart/form-data" style="margin-top: 1.25rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 1rem;">
+            <form asp-action="UploadPolicyDocument" method="post" enctype="multipart/form-data" style="margin-top: 1rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 1rem;">
                 @Html.AntiForgeryToken()
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                     <strong style="font-size: 0.85rem; color: #0f172a;">⚡ Ingest & Vectorize New Policy Document</strong>

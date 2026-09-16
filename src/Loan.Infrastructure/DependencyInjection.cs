@@ -31,9 +31,10 @@ public static class InfrastructureServiceCollectionExtensions
         // Register Azure OpenAI Chat Model
         services.AddSingleton<IChatModel, AzureOpenAI.AzureOpenAIChatModel>();
 
-        // Register Document Storage & Extractor (Azure Blob Storage with fallback)
+        // Register Document Storage & Extractor (Azure Blob Storage + GPT-4o LLM Extractor with fallback)
         services.AddSingleton<IDocumentStorageService, Documents.AzureBlobDocumentStorageService>();
-        services.AddScoped<IDocumentExtractor, Documents.SyntheticDocumentExtractor>();
+        services.AddScoped<Documents.SyntheticDocumentExtractor>();
+        services.AddScoped<IDocumentExtractor, Documents.AzureOpenAiDocumentExtractor>();
 
         // Register Slice 4 CQRS Command Handlers
         services.AddScoped<Application.Documents.UploadAndExtractDocumentCommandHandler>();
@@ -52,6 +53,13 @@ public static class InfrastructureServiceCollectionExtensions
         // Register Slice 5 Command Handlers & MCP Server
         services.AddScoped<Application.Recommendations.SaveRecommendationDraftCommandHandler>();
         services.AddScoped<MCP.McpToolServer>();
+
+        // Register Semantic Kernel In-Process Plugins & Service
+        services.AddScoped<SemanticKernel.Plugins.IdentityPlugin>();
+        services.AddScoped<SemanticKernel.Plugins.CreditPlugin>();
+        services.AddScoped<SemanticKernel.Plugins.PolicySearchPlugin>();
+        services.AddScoped<SemanticKernel.Plugins.DraftSaverPlugin>();
+        services.AddScoped<SemanticKernel.SemanticKernelAgentService>();
 
         // Register Slice 7 Multi-Agent Specialist Framework
         services.AddScoped<Application.Agents.DocumentAnalysisAgent>();

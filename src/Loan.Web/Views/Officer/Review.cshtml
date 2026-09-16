@@ -124,6 +124,72 @@
             </div>
         }
 
+        <!-- Ingested Evidence Documents & AI Extracted Facts (GPT-4o) -->
+        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0;">📂 Ingested Evidence & AI-Extracted Facts</h3>
+                <span class="badge badge-info">@Model.Documents.Count Documents</span>
+            </div>
+
+            @if (!Model.Documents.Any())
+            {
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">No evidence documents uploaded yet.</p>
+            }
+            else
+            {
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach (var doc in Model.Documents)
+                    {
+                        var avgDocConf = doc.Fields.Any() ? doc.Fields.Average(f => f.ConfidenceScore) : 1.0f;
+                        var isDocHigh = avgDocConf >= 0.85f;
+                        <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <div>
+                                    <strong style="font-size: 0.85rem;">@doc.FileName</strong>
+                                    <span class="badge badge-info" style="font-size: 0.7rem; margin-left: 0.35rem;">@doc.DocumentType</span>
+                                </div>
+                                <span class="badge @(isDocHigh ? "badge-success" : "badge-warning")" style="font-size: 0.7rem;">
+                                    Confidence: @( (int)(avgDocConf * 100) )%
+                                </span>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.4rem;">
+                                @foreach (var field in doc.Fields)
+                                {
+                                    var isFieldLow = field.ConfidenceScore < 0.85f;
+                                    <div style="background: white; border: 1px solid @(isFieldLow ? "#fde68a" : "#e2e8f0"); border-radius: 4px; padding: 0.3rem 0.5rem; font-size: 0.75rem;">
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: var(--text-muted);">@field.FieldName</span>
+                                            <span style="font-weight: 700; color: @(isFieldLow ? "#b45309" : "#047857");">@( (int)(field.ConfidenceScore * 100) )%</span>
+                                        </div>
+                                        <div style="font-weight: 700; color: var(--text-color); font-family: monospace; margin-top: 0.15rem;">
+                                            @(field.IsSensitive ? field.RawValueMasked : field.DisplayValue)
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(field.ProvenanceExcerpt))
+                                        {
+                                            <div style="font-size: 0.65rem; color: #64748b; font-style: italic; margin-top: 0.15rem;">
+                                                @field.ProvenanceExcerpt
+                                            </div>
+                                        }
+                                        <div style="margin-top: 0.2rem; font-size: 0.65rem;">
+                                            @if (field.NeedsConfirmation)
+                                            {
+                                                <span style="color: #b45309; font-weight: 700;">⚠️ Needs Confirmation</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: #047857; font-weight: 600;">✓ Confirmed Fact</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
         <!-- Immutable Audit Trail Timeline -->
         <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
             <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">📜 Immutable Audit Trail</h3>
