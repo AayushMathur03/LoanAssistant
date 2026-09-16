@@ -2,6 +2,24 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
+## [Phase 4: Database Audit, Starter Dataset & Canonical Scenarios (Tasks 4 & 5)] - 2026-09-16
+
+### Added & Verified
+- **Comprehensive Database Audit & Safe Transactional Cleanup (`LoanAssistantDb`)**:
+  - Performed deep inspection across all tables: `LoanApplications`, `Recommendations`, `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles`, `__EFMigrationsHistory`.
+  - Transactionally deleted 40 ephemeral test-run rows (`APP-DOC-TEST-*`) and 40 exploratory draft rows (`APP-DI-*`).
+  - Deduplicated multiple repeated seed recommendation rows for `APP-2026-001`.
+  - Preserved all 4 vital canonical demo applications (`APP-2026-001` through `APP-2026-004`), 2 custom applications, and all user credentials with 100% data integrity.
+- **Task 4: Starter Dataset & Realistic Synthetic Documents Verification**:
+  - Verified 6 synthetic document files in `src/Loan.Web/SampleDocuments/`: `Alice_Cooper_Paystub_Verified.txt`, `Alice_Cooper_BankStatement_60Day.txt`, `Alice_Cooper_DriverLicense_Masked.txt`, `Jane_Smith_BankStatement_60Day.txt`, `LowConfidence_Smudged_Paystub.txt`, `Adversarial_Prompt_Injection_Document.txt`.
+- **Task 5: 12 Synthetic Scenarios & 4 Canonical Demonstration Flows (`Loan.IntegrationTests`)**:
+  - Created `CanonicalScenarioIntegrationTests.cs` verifying all 4 canonical scenarios across both Happy and Failure paths:
+    - **Scenario 1**: Product Advice & Mortgage Underwriting (Happy: Alice Cooper DTI 25%, LTV 70% Eligible vs Failure: Charlie Davis DTI 54.3% > 45.0% Ineligible).
+    - **Scenario 2**: Fact Confirmation & Missing Evidence Blocking (Happy: all docs verified vs Failure: Jane Smith missing bank statement block).
+    - **Scenario 3**: OCR Extraction & Low-Confidence Human Mitigation (Happy: 96% verified vs Mitigation: Bob Brown 72% confidence smudge confirmation).
+    - **Scenario 4**: Security Intercept & Prompt Injection Defense (Happy: legitimate policy query vs Failure: adversarial override attempt intercepted).
+  - All **161/161 automated tests pass** across all 6 test projects with zero warnings or regressions.
+
 ## [Phase 3: Premium Copilot Chat Experience & Footers (Task 8)] - 2026-09-16
 
 ### Added & Verified

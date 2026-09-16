@@ -88,11 +88,16 @@ graph TD
   - [x] Added `Microsoft.SemanticKernel` package and registered native Kernel plugins (`IdentityPlugin`, `CreditPlugin`, `PolicySearchPlugin`, `DraftSaverPlugin`).
   - [x] Maintained JSON-RPC MCP Server in `McpToolServer.cs` for external tool calls.
   - [x] Pure deterministic C# domain rules preserved in `Loan.Domain.Eligibility`.
-- [ ] **Task 4: Starter Dataset & Realistic Synthetic Documents Verification**
-  - [ ] Verify 6 synthetic files and 4 canonical scenarios in live runtime.
-- [ ] **Task 5: 12 Synthetic Scenarios & 4 Demonstration Flows**
-  - [ ] Verify all 4 required scenarios (Product Advice, Fact Confirmation, Eligibility Recommendation, Prompt Injection Defense) work live on both Happy Path and Failure Path.
-- **Status**: 🟡 **Tasks 3 & 6 Completed; Tasks 4 & 5 Ready for Execution (NEXT)**
+- [x] **Task 4: Starter Dataset & Realistic Synthetic Documents Verification**
+  - [x] Verified all 6 synthetic document files in `src/Loan.Web/SampleDocuments/` (verified paystubs, bank statements, masked IDs, low-confidence OCR scan, adversarial injection document).
+  - [x] Executed clean, non-destructive transactional database audit and cleanup: removed 80 ephemeral test/draft rows, deduplicated recommendation seed entries, and preserved all 4 canonical demo applications (`APP-2026-001` through `APP-2026-004`), 2 custom applications, and all user credentials.
+- [x] **Task 5: 12 Synthetic Scenarios & 4 Demonstration Flows**
+  - [x] Implemented and verified `CanonicalScenarioIntegrationTests.cs` covering all 4 canonical scenarios across both Happy and Failure paths.
+  - [x] Scenario 1: Product Advice & Mortgage Underwriting (Happy Path Alice Cooper DTI 25% Eligible vs Failure Path Charlie Davis DTI 54.3% Ineligible).
+  - [x] Scenario 2: Fact Confirmation & Missing Evidence Blocking (Happy Path vs Jane Smith missing bank statement block).
+  - [x] Scenario 3: OCR Extraction & Low-Confidence Human Mitigation (Happy Path vs Bob Brown smudged paystub 72% confidence confirmation).
+  - [x] Scenario 4: Security Intercept & Prompt Injection Defense (Happy Path vs adversarial system override interception).
+- **Status**: 🟢 **100% COMPLETE (All 161 automated tests passing, 0 regressions)**
 
 ---
 
@@ -104,4 +109,4 @@ graph TD
 | **Phase 1** | Info Architecture & Loan Customizer | Tasks 1 & 9 | 🟢 **100% COMPLETE** |
 | **Phase 2** | Statuses, Evidence & Confirmed Agent Flow | Tasks 2 & 7 | 🟢 **100% COMPLETE** |
 | **Phase 3** | Premium Chat Experience & Footers | Task 8 | 🟢 **100% COMPLETE** |
-| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | 🟡 **IN PROGRESS (Next: Tasks 4 & 5)** |
+| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | 🟢 **100% COMPLETE** |
