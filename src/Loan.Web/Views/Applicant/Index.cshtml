@@ -298,7 +298,7 @@
     }
 </style>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+<div class="portal-container">
     <!-- Welcome Header Banner -->
     <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 14px; padding: 1.75rem 2rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -322,17 +322,32 @@
         </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
+    @{
+        var successMsg = TempData["SuccessMessage"]?.ToString();
+        var errorMsg = TempData["ErrorMessage"]?.ToString();
+        bool isDocMessage = (!string.IsNullOrEmpty(successMsg) && (successMsg.Contains("Document") || successMsg.Contains("Field") || successMsg.Contains("facts extracted"))) ||
+                            (!string.IsNullOrEmpty(errorMsg) && (errorMsg.Contains("Document") || errorMsg.Contains("upload") || errorMsg.Contains("synthetic")));
+    }
+
+    @if (!isDocMessage && !string.IsNullOrEmpty(successMsg))
     {
-        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
-            &#10003; @TempData["SuccessMessage"]
+        <div class="anchored-toast anchored-toast-success" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.25rem;">✓</span>
+                <div><strong>Success:</strong> @successMsg</div>
+            </div>
+            <button type="button" onclick="this.parentElement.style.display='none'" style="background: transparent; border: none; font-size: 1.25rem; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
         </div>
     }
 
-    @if (TempData["ErrorMessage"] != null)
+    @if (!isDocMessage && !string.IsNullOrEmpty(errorMsg))
     {
-        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 0.85rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem;">
-            &#9888; @TempData["ErrorMessage"]
+        <div class="anchored-toast anchored-toast-error" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.25rem;">⚠️</span>
+                <div><strong>Notice:</strong> @errorMsg</div>
+            </div>
+            <button type="button" onclick="this.parentElement.style.display='none'" style="background: transparent; border: none; font-size: 1.25rem; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
         </div>
     }
 
@@ -725,8 +740,23 @@
 
         @if (app != null)
         {
+            <!-- Task 12: Anchored Document Intake & Extraction Toast Notification -->
+            @if (isDocMessage)
+            {
+                <div id="docIntakeNotification" class="anchored-toast @(!string.IsNullOrEmpty(successMsg) ? "anchored-toast-success" : "anchored-toast-error")" style="margin-bottom: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.4rem;">@(!string.IsNullOrEmpty(successMsg) ? "✓" : "⚠️")</span>
+                        <div>
+                            <strong style="font-size: 0.95rem;">@(!string.IsNullOrEmpty(successMsg) ? "Document Fact Extraction Confirmed" : "Document Intake Notice"):</strong>
+                            <div style="font-size: 0.88rem; margin-top: 0.15rem;">@(successMsg ?? errorMsg)</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="this.parentElement.style.display='none'" style="background: transparent; border: none; font-size: 1.35rem; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
+                </div>
+            }
+
             <!-- Document Intake & Extraction Section with Sample Document Quick-Picker -->
-            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div class="card" id="document-intake-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.75rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
                     <div>
                         <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">
@@ -1294,4 +1324,14 @@
         div.innerText = text;
         return div.innerHTML;
     }
+
+    // Task 12: Auto-scroll to anchored document extraction toast if present
+    document.addEventListener('DOMContentLoaded', function () {
+        var toast = document.getElementById('docIntakeNotification');
+        if (toast) {
+            setTimeout(function () {
+                toast.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 150);
+        }
+    });
 </script>
