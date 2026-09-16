@@ -391,38 +391,42 @@
                 }
             </div>
 
-            <!-- Right Column: Live Streaming AI Assistant -->
-            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
-                    <div>
-                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">🤖 Policy & Underwriting AI Assistant</h2>
-                        <span style="font-size: 0.78rem; color: #64748b;">Live Azure OpenAI + Azure AI Search RAG</span>
+            <!-- Right Column: Live Streaming AI Assistant (Task 8 Copilot Experience) -->
+            <div class="copilot-chat-card">
+                <div class="copilot-chat-header">
+                    <div class="copilot-chat-header-title">
+                        <span class="copilot-live-dot"></span>
+                        <h2>🤖 Policy & Underwriting Assistant</h2>
                     </div>
-                    <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px;">
-                        Streaming Active
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 9999px;">
+                        GPT-4o + Azure Search
                     </span>
                 </div>
 
                 <!-- Chat Output Box -->
-                <div id="chatHistory" style="flex: 1; min-height: 260px; max-height: 380px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                    <div style="margin-bottom: 1rem;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>
-                        <p style="font-size: 0.88rem; color: #334155; line-height: 1.5; margin: 0;">
+                <div id="chatHistory" class="copilot-chat-history">
+                    <div class="copilot-bubble-wrapper-assistant">
+                        <span class="copilot-sender-label" style="color: #2563eb;">Apex AI Assistant</span>
+                        <div class="copilot-bubble-assistant">
                             Hello @Model.CurrentUserName! I can answer questions regarding loan guidelines, maximum DTI/LTV limits, required document types, or closing disclosures under current active policies.
-                        </p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Chat Input Area -->
-                <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="streamQuestionInput" class="form-control" placeholder="Ask e.g. 'What is the maximum LTV ratio allowed?'" style="padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
-                    <button type="button" id="btnSendStream" class="btn" style="background: #2563eb; color: white; border: none; border-radius: 8px; padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.88rem; cursor: pointer;" onclick="sendStreamQuestion()">
-                        Ask AI
-                    </button>
+                <!-- Quick Prompt Chips -->
+                <div class="copilot-prompt-chips">
+                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What is the maximum LTV ratio allowed for mortgages?')">Max LTV Ratio</button>
+                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What is the minimum credit score for personal loans?')">Min Credit Score</button>
+                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What documents are required to prove income?')">Income Verification</button>
+                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What are the TRID disclosure timing rules?')">TRID Timing</button>
                 </div>
 
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem; line-height: 1.4;">
-                    <strong>Disclaimer:</strong> Explanations are informational and do NOT constitute a loan commitment, rate lock, or pre-approval decision per Fair Lending regulations.
+                <!-- Chat Input Area -->
+                <div class="copilot-input-area">
+                    <input type="text" id="streamQuestionInput" class="copilot-input-field" placeholder="Ask policy question (e.g. 'What is the maximum LTV ratio?')" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
+                    <button type="button" id="btnSendStream" class="copilot-send-btn" onclick="sendStreamQuestion()">
+                        Ask AI <span>&rarr;</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -813,6 +817,14 @@
         document.getElementById('confirmFieldModal').style.display = 'block';
     }
 
+    function quickAsk(text) {
+        const input = document.getElementById('streamQuestionInput');
+        input.value = text;
+        sendStreamQuestion();
+    }
+
+    let copilotMsgCounter = 0;
+
     async function sendStreamQuestion() {
         const input = document.getElementById('streamQuestionInput');
         const question = input.value.trim();
@@ -821,13 +833,14 @@
         const chatHistory = document.getElementById('chatHistory');
         const btn = document.getElementById('btnSendStream');
 
+        const currentMsgId = ++copilotMsgCounter;
+
         // Append user bubble
         const userDiv = document.createElement('div');
-        userDiv.style.marginBottom = '1rem';
-        userDiv.style.textAlign = 'right';
+        userDiv.className = 'copilot-bubble-wrapper-user';
         userDiv.innerHTML = `
-            <span style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 0.25rem;">You</span>
-            <div style="display: inline-block; background: #2563eb; color: white; padding: 0.6rem 0.9rem; border-radius: 12px 12px 0 12px; font-size: 0.88rem; max-width: 80%; text-align: left;">
+            <span class="copilot-sender-label">You</span>
+            <div class="copilot-bubble-user">
                 ${escapeHtml(question)}
             </div>
         `;
@@ -835,29 +848,38 @@
         input.value = '';
         btn.disabled = true;
 
-        // Create Assistant bubble
-        const assistantDiv = document.createElement('div');
-        assistantDiv.style.marginBottom = '1rem';
-        assistantDiv.innerHTML = `
-            <span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>
-            <div class="assistant-content" style="background: white; border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 12px 12px 12px 0; font-size: 0.88rem; color: #1e293b; line-height: 1.5;">
-                <span class="typing" style="color: #64748b;">Thinking...</span>
+        // Create Assistant bubble with shimmering typing dots
+        const assistantWrapper = document.createElement('div');
+        assistantWrapper.className = 'copilot-bubble-wrapper-assistant';
+        assistantWrapper.innerHTML = `
+            <span class="copilot-sender-label" style="color: #2563eb;">Apex AI Assistant</span>
+            <div class="copilot-bubble-assistant" id="msg-bubble-${currentMsgId}">
+                <div class="copilot-typing-shimmer" id="shimmer-${currentMsgId}">
+                    <span class="copilot-typing-dot"></span>
+                    <span class="copilot-typing-dot"></span>
+                    <span class="copilot-typing-dot"></span>
+                    <span>Analyzing policy documents...</span>
+                </div>
+                <div class="copilot-content-text" id="text-${currentMsgId}" style="display: none;"></div>
             </div>
         `;
-        chatHistory.appendChild(assistantDiv);
+        chatHistory.appendChild(assistantWrapper);
         chatHistory.scrollTop = chatHistory.scrollHeight;
 
-        const contentElem = assistantDiv.querySelector('.assistant-content');
-        let fullText = '';
+        const bubbleElem = document.getElementById(`msg-bubble-${currentMsgId}`);
+        const shimmerElem = document.getElementById(`shimmer-${currentMsgId}`);
+        const textElem = document.getElementById(`text-${currentMsgId}`);
+
+        let fullRawText = '';
         let citations = [];
+        let disclaimerText = '';
+        let isFirstToken = true;
 
         try {
             const url = `/Applicant/ChatStream?question=${encodeURIComponent(question)}`;
             const response = await fetch(url);
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-
-            contentElem.innerHTML = '';
 
             while (true) {
                 const { value, done } = await reader.read();
@@ -874,11 +896,19 @@
                         try {
                             const data = JSON.parse(jsonStr);
                             if (data.chunk) {
-                                fullText += data.chunk;
-                                contentElem.innerText = fullText;
+                                if (isFirstToken) {
+                                    if (shimmerElem) shimmerElem.style.display = 'none';
+                                    if (textElem) textElem.style.display = 'block';
+                                    isFirstToken = false;
+                                }
+                                fullRawText += data.chunk;
+                                textElem.innerHTML = renderFormattedResponse(fullRawText, currentMsgId);
                             }
                             if (data.citations) {
                                 citations = data.citations;
+                            }
+                            if (data.disclaimer) {
+                                disclaimerText = data.disclaimer;
                             }
                         } catch (e) { }
                     }
@@ -886,26 +916,84 @@
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
 
-            // Task 8: ChatGPT-style Citations strip beneath the answer
+            // Task 8: ChatGPT-style Grounded Policy Sources footer strip
             if (citations && citations.length > 0) {
-                const citeStrip = document.createElement('div');
-                citeStrip.style.marginTop = '0.75rem';
-                citeStrip.style.paddingTop = '0.5rem';
-                citeStrip.style.borderTop = '1px solid #f1f5f9';
-                citeStrip.style.fontSize = '0.75rem';
-                citeStrip.style.color = '#475569';
+                const sourcesStrip = document.createElement('div');
+                sourcesStrip.className = 'copilot-sources-strip';
+                let chipsHtml = citations.map((c, idx) => {
+                    const docTitle = c.documentTitle || c.title || 'Policy';
+                    const sec = c.section ? ` (Sec. ${escapeHtml(c.section)})` : '';
+                    const ver = c.policyVersion ? ` <span style="font-size:0.68rem; color:#059669;">v${escapeHtml(c.policyVersion)}</span>` : '';
+                    const excerpt = escapeHtml(c.excerpt || '');
+                    return `
+                        <div class="copilot-source-chip" id="source-${currentMsgId}-${idx + 1}" title="${excerpt}">
+                            <span class="copilot-source-num">[${idx + 1}]</span>
+                            <strong>${escapeHtml(docTitle)}</strong>${sec}${ver}
+                        </div>
+                    `;
+                }).join('');
 
-                let citeHtml = '<strong style="display: block; margin-bottom: 0.35rem; color: #1e3a8a;">📚 Grounded Policy Sources:</strong>';
-                citations.forEach((c, idx) => {
-                    citeHtml += `<span style="display: inline-block; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.2rem 0.5rem; border-radius: 4px; margin-right: 0.4rem; margin-bottom: 0.3rem;">[${idx + 1}] ${escapeHtml(c.title || c.documentTitle || 'Policy')} (Sec. ${escapeHtml(c.section || 'N/A')})</span>`;
-                });
-                citeStrip.innerHTML = citeHtml;
-                contentElem.appendChild(citeStrip);
+                sourcesStrip.innerHTML = `
+                    <div class="copilot-sources-title">
+                        📚 Grounded Policy Sources
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                        ${chipsHtml}
+                    </div>
+                `;
+                bubbleElem.appendChild(sourcesStrip);
             }
+
+            // Task 8: Regulatory Disclaimer Strip
+            const disclaimerStrip = document.createElement('div');
+            disclaimerStrip.className = 'copilot-disclaimer-strip';
+            disclaimerStrip.innerHTML = `
+                <span>⚖️</span>
+                <div>
+                    <strong>Regulatory Notice:</strong> ${escapeHtml(disclaimerText || 'Informational only. Explanations do not constitute a credit approval, rate lock, or binding commitment per TRID and Fair Lending regulations.')}
+                </div>
+            `;
+            bubbleElem.appendChild(disclaimerStrip);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
         } catch (err) {
-            contentElem.innerHTML = `<span style="color: #dc2626;">Error communicating with AI assistant: ${escapeHtml(err.message)}</span>`;
+            if (shimmerElem) shimmerElem.style.display = 'none';
+            if (textElem) {
+                textElem.style.display = 'block';
+                textElem.innerHTML = `<span style="color: #dc2626;">Error communicating with AI assistant: ${escapeHtml(err.message)}</span>`;
+            }
         } finally {
             btn.disabled = false;
+        }
+    }
+
+    function renderFormattedResponse(text, msgId) {
+        let html = escapeHtml(text);
+
+        // Convert bold **text**
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // Convert newlines to breaks
+        html = html.replace(/\n/g, '<br/>');
+
+        // Convert in-prose numbered citations like [1], [2], [3] to clickable pills
+        html = html.replace(/\[(\d+)\]/g, function(match, num) {
+            return `<span class="copilot-cite-pill" title="Jump to source [${num}]" onclick="scrollToSource('${msgId}', '${num}')">[${num}]</span>`;
+        });
+
+        return html;
+    }
+
+    function scrollToSource(msgId, num) {
+        const sourceEl = document.getElementById(`source-${msgId}-${num}`);
+        if (sourceEl) {
+            sourceEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            sourceEl.style.borderColor = '#2563eb';
+            sourceEl.style.backgroundColor = '#eff6ff';
+            setTimeout(() => {
+                sourceEl.style.borderColor = '';
+                sourceEl.style.backgroundColor = '';
+            }, 1800);
         }
     }
 

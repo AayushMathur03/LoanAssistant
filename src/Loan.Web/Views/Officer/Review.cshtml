@@ -350,20 +350,40 @@
             }
         </div>
 
-        <!-- Officer Underwriting AI Assistant (Flow C) -->
-        <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                <h3 style="font-size: 1rem; font-weight: 700; color: #1e3a8a; margin: 0;">🤖 Underwriting AI Copilot</h3>
-                <span class="badge" style="background: #ecfdf5; color: #065f46; font-size: 0.72rem;">Grounded Azure RAG</span>
+        <!-- Officer Underwriting AI Assistant (Task 8 Copilot Experience) -->
+        <div class="copilot-chat-card" style="margin-top: 1.5rem; min-height: 420px;">
+            <div class="copilot-chat-header">
+                <div class="copilot-chat-header-title">
+                    <span class="copilot-live-dot"></span>
+                    <h2 style="font-size: 0.95rem;">🤖 Underwriting AI Copilot</h2>
+                </div>
+                <span class="badge" style="background: #ecfdf5; color: #065f46; font-size: 0.72rem; font-weight: 700;">
+                    Azure Search RAG Grounded
+                </span>
             </div>
             
-            <div id="officerChatHistory" style="min-height: 120px; max-height: 220px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
-                <span style="color: #64748b;">Ask underwriting or exception policy questions for @Model.ProductRules.ProductName (e.g. "What exceptions permit DTI over 43%?" or "What are the TRID timing requirements?"):</span>
+            <div id="officerChatHistory" class="copilot-chat-history" style="max-height: 280px;">
+                <div class="copilot-bubble-wrapper-assistant">
+                    <span class="copilot-sender-label" style="color: #2563eb;">Underwriting Copilot</span>
+                    <div class="copilot-bubble-assistant">
+                        Ask underwriting or exception policy questions for <strong>@Model.ProductRules.ProductName</strong> (e.g. compensating factors, TRID timing, or required documentation).
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="officerQInput" class="form-control" placeholder="Ask policy question..." style="font-size: 0.85rem; padding: 0.5rem 0.75rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendOfficerQuestion();}" />
-                <button type="button" id="btnOfficerSend" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="sendOfficerQuestion()">Query</button>
+            <!-- Quick Prompt Chips for Underwriter -->
+            <div class="copilot-prompt-chips">
+                <button type="button" class="copilot-prompt-chip" onclick="quickOfficerAsk('What compensating factors permit DTI over 43%?')">DTI > 43% Exceptions</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickOfficerAsk('What are the TRID timing requirements?')">TRID Timing</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickOfficerAsk('What appraisal waiver rules apply?')">Appraisal Waiver</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickOfficerAsk('What secondary income documents are mandatory?')">Income Docs</button>
+            </div>
+
+            <div class="copilot-input-area">
+                <input type="text" id="officerQInput" class="copilot-input-field" placeholder="Ask underwriting policy question..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendOfficerQuestion();}" />
+                <button type="button" id="btnOfficerSend" class="copilot-send-btn" onclick="sendOfficerQuestion()">
+                    Query <span>&rarr;</span>
+                </button>
             </div>
         </div>
     </div>
@@ -408,6 +428,14 @@
             }
         });
 
+        function quickOfficerAsk(text) {
+            const input = document.getElementById('officerQInput');
+            input.value = text;
+            sendOfficerQuestion();
+        }
+
+        let officerMsgCounter = 0;
+
         async function sendOfficerQuestion() {
             const input = document.getElementById('officerQInput');
             const question = input.value.trim();
@@ -415,22 +443,47 @@
 
             const chatHistory = document.getElementById('officerChatHistory');
             const btnSend = document.getElementById('btnOfficerSend');
+            const currentMsgId = ++officerMsgCounter;
 
-            const userMsg = document.createElement('div');
-            userMsg.style.margin = '0.5rem 0';
-            userMsg.innerHTML = `<strong style="color:#0f172a;">Officer:</strong> ${question}`;
-            chatHistory.appendChild(userMsg);
+            // Append Officer user bubble
+            const userDiv = document.createElement('div');
+            userDiv.className = 'copilot-bubble-wrapper-user';
+            userDiv.innerHTML = `
+                <span class="copilot-sender-label">Loan Officer</span>
+                <div class="copilot-bubble-user" style="background: linear-flex; max-width: 85%;">
+                    ${escapeOfficerHtml(question)}
+                </div>
+            `;
+            chatHistory.appendChild(userDiv);
             input.value = '';
             btnSend.disabled = true;
 
-            const aiMsg = document.createElement('div');
-            aiMsg.style.margin = '0.5rem 0';
-            aiMsg.style.color = '#1e3a8a';
-            const aiText = document.createElement('span');
-            aiMsg.innerHTML = `<strong style="color:#2563eb;">Copilot:</strong> `;
-            aiMsg.appendChild(aiText);
-            chatHistory.appendChild(aiMsg);
+            // Create Assistant bubble with typing shimmer
+            const assistantWrapper = document.createElement('div');
+            assistantWrapper.className = 'copilot-bubble-wrapper-assistant';
+            assistantWrapper.innerHTML = `
+                <span class="copilot-sender-label" style="color: #2563eb;">Underwriting Copilot</span>
+                <div class="copilot-bubble-assistant" id="officer-bubble-${currentMsgId}" style="max-width: 95%;">
+                    <div class="copilot-typing-shimmer" id="officer-shimmer-${currentMsgId}">
+                        <span class="copilot-typing-dot"></span>
+                        <span class="copilot-typing-dot"></span>
+                        <span class="copilot-typing-dot"></span>
+                        <span>Retrieving policy guidelines...</span>
+                    </div>
+                    <div class="copilot-content-text" id="officer-text-${currentMsgId}" style="display: none;"></div>
+                </div>
+            `;
+            chatHistory.appendChild(assistantWrapper);
             chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            const bubbleElem = document.getElementById(`officer-bubble-${currentMsgId}`);
+            const shimmerElem = document.getElementById(`officer-shimmer-${currentMsgId}`);
+            const textElem = document.getElementById(`officer-text-${currentMsgId}`);
+
+            let fullRawText = '';
+            let citations = [];
+            let disclaimerText = '';
+            let isFirstToken = true;
 
             try {
                 const encodedQ = encodeURIComponent(question);
@@ -455,33 +508,104 @@
                             try {
                                 const parsed = JSON.parse(dataStr);
                                 if (parsed.chunk) {
-                                    aiText.innerText += parsed.chunk;
+                                    if (isFirstToken) {
+                                        if (shimmerElem) shimmerElem.style.display = 'none';
+                                        if (textElem) textElem.style.display = 'block';
+                                        isFirstToken = false;
+                                    }
+                                    fullRawText += parsed.chunk;
+                                    textElem.innerHTML = renderOfficerFormatted(fullRawText, currentMsgId);
                                     chatHistory.scrollTop = chatHistory.scrollHeight;
                                 }
-                                if (parsed.isFinal && parsed.citations && parsed.citations.length > 0) {
-                                    const citeEl = document.createElement('div');
-                                    citeEl.style.fontSize = '0.75rem';
-                                    citeEl.style.color = '#475569';
-                                    citeEl.style.marginTop = '0.5rem';
-                                    citeEl.style.paddingTop = '0.35rem';
-                                    citeEl.style.borderTop = '1px solid #f1f5f9';
-
-                                    let citeHtml = '<strong style="display: block; margin-bottom: 0.25rem; color: #1e3a8a;">📚 Grounded Policy Sources:</strong>';
-                                    parsed.citations.forEach((c, idx) => {
-                                        citeHtml += `<span style="display: inline-block; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.15rem 0.45rem; border-radius: 4px; margin-right: 0.35rem; margin-bottom: 0.25rem;">[${idx + 1}] ${c.title || c.documentTitle || 'Policy'} (Sec. ${c.section || 'N/A'})</span>`;
-                                    });
-                                    citeEl.innerHTML = citeHtml;
-                                    aiMsg.appendChild(citeEl);
+                                if (parsed.citations) {
+                                    citations = parsed.citations;
+                                }
+                                if (parsed.disclaimer) {
+                                    disclaimerText = parsed.disclaimer;
                                 }
                             } catch (e) {}
                         }
                     }
                 }
+
+                // Grounded Policy Sources footer strip
+                if (citations && citations.length > 0) {
+                    const sourcesStrip = document.createElement('div');
+                    sourcesStrip.className = 'copilot-sources-strip';
+                    let chipsHtml = citations.map((c, idx) => {
+                        const docTitle = c.documentTitle || c.title || 'Policy';
+                        const sec = c.section ? ` (Sec. ${escapeOfficerHtml(c.section)})` : '';
+                        const ver = c.policyVersion ? ` <span style="font-size:0.68rem; color:#059669;">v${escapeOfficerHtml(c.policyVersion)}</span>` : '';
+                        const excerpt = escapeOfficerHtml(c.excerpt || '');
+                        return `
+                            <div class="copilot-source-chip" id="officer-source-${currentMsgId}-${idx + 1}" title="${excerpt}">
+                                <span class="copilot-source-num">[${idx + 1}]</span>
+                                <strong>${escapeOfficerHtml(docTitle)}</strong>${sec}${ver}
+                            </div>
+                        `;
+                    }).join('');
+
+                    sourcesStrip.innerHTML = `
+                        <div class="copilot-sources-title">
+                            📚 Grounded Policy Sources
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                            ${chipsHtml}
+                        </div>
+                    `;
+                    bubbleElem.appendChild(sourcesStrip);
+                }
+
+                // Regulatory / Underwriting Disclaimer Strip
+                const disclaimerStrip = document.createElement('div');
+                disclaimerStrip.className = 'copilot-disclaimer-strip';
+                disclaimerStrip.innerHTML = `
+                    <span>⚖️</span>
+                    <div>
+                        <strong>Underwriting Advisory:</strong> ${escapeOfficerHtml(disclaimerText || 'Model suggestions must be verified by the designated loan officer before final sign-off.')}
+                    </div>
+                `;
+                bubbleElem.appendChild(disclaimerStrip);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+
             } catch (err) {
-                aiText.innerText += ' [Network error]';
+                if (shimmerElem) shimmerElem.style.display = 'none';
+                if (textElem) {
+                    textElem.style.display = 'block';
+                    textElem.innerHTML = `<span style="color: #dc2626;">Error communicating with AI assistant: ${escapeOfficerHtml(err.message)}</span>`;
+                }
             } finally {
                 btnSend.disabled = false;
             }
+        }
+
+        function renderOfficerFormatted(text, msgId) {
+            let html = escapeOfficerHtml(text);
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\n/g, '<br/>');
+            html = html.replace(/\[(\d+)\]/g, function(match, num) {
+                return `<span class="copilot-cite-pill" title="Jump to source [${num}]" onclick="scrollToOfficerSource('${msgId}', '${num}')">[${num}]</span>`;
+            });
+            return html;
+        }
+
+        function scrollToOfficerSource(msgId, num) {
+            const sourceEl = document.getElementById(`officer-source-${msgId}-${num}`);
+            if (sourceEl) {
+                sourceEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                sourceEl.style.borderColor = '#2563eb';
+                sourceEl.style.backgroundColor = '#eff6ff';
+                setTimeout(() => {
+                    sourceEl.style.borderColor = '';
+                    sourceEl.style.backgroundColor = '';
+                }, 1800);
+            }
+        }
+
+        function escapeOfficerHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
         }
     </script>
 }

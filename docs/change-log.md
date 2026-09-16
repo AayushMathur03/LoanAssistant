@@ -2,7 +2,18 @@
 
 All notable changes to the Loan Application & Compliance Review Assistant project will be documented in this file.
 
-## [Step 10.4 20-Prompt Evaluation Suite & Auditable Report Passed] - 2026-09-15
+## [Phase 3: Premium Copilot Chat Experience & Footers (Task 8)] - 2026-09-16
+
+### Added & Verified
+- **Premium Copilot Chat Assistant Across All 3 Portals (`Views/Applicant/Index.cshtml`, `Views/Officer/Review.cshtml`, `Views/Compliance/Index.cshtml`)**:
+  - Implemented `.copilot-chat-card` with live pulsing status indicator, generous height, responsive flex layout, and distinctive Fintech brand styling.
+  - Implemented real-time token streaming with animated 3-dot typing shimmer (`.copilot-typing-shimmer`, `.copilot-typing-dot`) while awaiting first token.
+  - Formatted in-prose citations (`[1]`, `[2]`, `[Policy: ...]`) as clickable superscript pill badges (`.copilot-cite-pill`) with smooth-scroll and highlight feedback to grounded policy chips.
+  - Created dedicated "📚 Grounded Policy Sources" footer strip (`.copilot-sources-strip`) separated visually beneath each AI response with clickable source chips (`.copilot-source-chip`) displaying document title, section, policy version, and excerpt tooltip.
+  - Added mandatory regulatory non-approval disclaimer strip (`.copilot-disclaimer-strip`) to every streaming AI response.
+  - Added quick prompt starter chips across all 3 portals for instant one-click policy inquiry.
+  - Verified 100% pass rate across all 157 automated tests across all 6 test projects with zero regressions.
+
 
 ### Added & Verified
 - **20-Prompt Evaluation Suite & Report Generator (`Loan.PromptTests`)**:

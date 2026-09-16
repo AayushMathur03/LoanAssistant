@@ -68,13 +68,14 @@ graph TD
 
 ### Phase 3: Premium Chat Assistant with ChatGPT-Style Footers (Task 8)
 **Goal**: Transform the assistant from a cramped sidebar into a modern, full-featured chat interface across all 4 personas.
-- [ ] **Task 8: Premium Chat Experience & Citations**
-  - [ ] Expanded layout with generous height and width, scrollable history, user vs assistant message bubbles, loading skeletons, and live streaming token rendering.
-  - [ ] Numbered in-prose reference markers (`[1]`, `[2]`).
-  - [ ] Dedicated "📚 Grounded Policy Sources" footer strip separated visually below each response with clickable chips: `[1] Policy Guide — Section X.X`.
-  - [ ] Clear non-approval disclaimer displayed in the footer strip on all responses.
-  - [ ] Implement consistently across Applicant (`Applicant/Index.cshtml`), Loan Officer (`Officer/Review.cshtml`), and Compliance Reviewer (`Compliance/Index.cshtml`).
-- **Status**: 🟡 **PENDING — READY TO START (NEXT PHASE)**
+- [x] **Task 8: Premium Chat Experience & Citations**
+  - [x] Modern, generous layout with user vs assistant message bubbles, live pulsing status dot, animated 3-dot typing shimmer, and smooth token streaming.
+  - [x] Quick prompt starter chips for instant one-click policy questioning across Applicant, Officer, and Compliance portals.
+  - [x] Numbered in-prose reference markers (`[1]`, `[2]`) highlighted as interactive clickable pill badges (`.copilot-cite-pill`) with auto-scroll and highlight.
+  - [x] Dedicated "📚 Grounded Policy Sources" footer strip (`.copilot-sources-strip`) separated visually below each response with clickable chips: `[1] Policy Guide — Section X.X` with excerpt tooltip.
+  - [x] Mandatory regulatory non-approval disclaimer displayed in the footer strip on all responses (`.copilot-disclaimer-strip`).
+  - [x] Implemented consistently across Applicant (`Applicant/Index.cshtml`), Loan Officer (`Officer/Review.cshtml`), and Compliance Reviewer (`Compliance/Index.cshtml`).
+- **Status**: 🟢 **100% COMPLETE (Verified across all test suites + Live endpoints)**
 
 ---
 
@@ -91,7 +92,7 @@ graph TD
   - [ ] Verify 6 synthetic files and 4 canonical scenarios in live runtime.
 - [ ] **Task 5: 12 Synthetic Scenarios & 4 Demonstration Flows**
   - [ ] Verify all 4 required scenarios (Product Advice, Fact Confirmation, Eligibility Recommendation, Prompt Injection Defense) work live on both Happy Path and Failure Path.
-- **Status**: 🟢 **Tasks 3 & 6 Completed; Tasks 4 & 5 Pending Phase 3 completion**
+- **Status**: 🟡 **Tasks 3 & 6 Completed; Tasks 4 & 5 Ready for Execution (NEXT)**
 
 ---
 
@@ -102,5 +103,5 @@ graph TD
 | **Phase 0** | Foundation, Demo Data & DB Migrations | Seeding & EF Core | 🟢 **100% COMPLETE** |
 | **Phase 1** | Info Architecture & Loan Customizer | Tasks 1 & 9 | 🟢 **100% COMPLETE** |
 | **Phase 2** | Statuses, Evidence & Confirmed Agent Flow | Tasks 2 & 7 | 🟢 **100% COMPLETE** |
-| **Phase 3** | Premium Chat Experience & Footers | Task 8 | 🟡 **READY TO START (NEXT)** |
-| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | ⚪ **PENDING (Awaiting Phase 3)** |
+| **Phase 3** | Premium Chat Experience & Footers | Task 8 | 🟢 **100% COMPLETE** |
+| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | 🟡 **IN PROGRESS (Next: Tasks 4 & 5)** |

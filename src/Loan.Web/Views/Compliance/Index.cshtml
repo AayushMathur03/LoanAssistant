@@ -100,23 +100,40 @@
             </div>
         </div>
 
-        <!-- Right: Grounded Compliance AI Assistant -->
-        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                    <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">⚖️ Compliance Policy AI Assistant</h2>
-                    <span style="font-size: 0.78rem; color: #64748b;">Grounded Regulatory Querying</span>
+        <!-- Right: Grounded Compliance AI Assistant (Task 8 Copilot Experience) -->
+        <div class="copilot-chat-card" style="min-height: 440px;">
+            <div class="copilot-chat-header">
+                <div class="copilot-chat-header-title">
+                    <span class="copilot-live-dot"></span>
+                    <h2>⚖️ Compliance Policy AI Assistant</h2>
                 </div>
-                <span class="badge badge-success" style="font-size: 0.72rem;">Azure RAG Active</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 700;">
+                    Azure AI Search Grounded
+                </span>
             </div>
 
-            <div id="compChatHistory" style="flex: 1; min-height: 180px; max-height: 240px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
-                <span style="color: #64748b;">Ask regulatory questions (e.g. "What is the TRID Loan Estimate delivery deadline?" or "What fair lending disclosures are required?"):</span>
+            <div id="compChatHistory" class="copilot-chat-history" style="max-height: 280px;">
+                <div class="copilot-bubble-wrapper-assistant">
+                    <span class="copilot-sender-label" style="color: #2563eb;">Compliance Copilot</span>
+                    <div class="copilot-bubble-assistant">
+                        Ask regulatory questions regarding federal compliance (e.g. TRID/RESPA timing, Fair Lending guidelines, adverse action notifications, or document retention rules).
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="compQInput" class="form-control" placeholder="Ask compliance question..." style="font-size: 0.85rem; padding: 0.5rem 0.75rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendCompQuestion();}" />
-                <button type="button" id="btnCompSend" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="sendCompQuestion()">Ask</button>
+            <!-- Quick Prompt Chips for Auditor -->
+            <div class="copilot-prompt-chips">
+                <button type="button" class="copilot-prompt-chip" onclick="quickCompAsk('What is the TRID Loan Estimate delivery deadline?')">TRID 3-Day Rule</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickCompAsk('What are the mandatory Fair Lending adverse action notice requirements?')">Adverse Action Notice</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickCompAsk('What are the record retention rules for denied applications?')">Record Retention</button>
+                <button type="button" class="copilot-prompt-chip" onclick="quickCompAsk('What exceptions require secondary compliance officer sign-off?')">Sign-off Thresholds</button>
+            </div>
+
+            <div class="copilot-input-area">
+                <input type="text" id="compQInput" class="copilot-input-field" placeholder="Ask compliance question..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendCompQuestion();}" />
+                <button type="button" id="btnCompSend" class="copilot-send-btn" onclick="sendCompQuestion()">
+                    Query <span>&rarr;</span>
+                </button>
             </div>
         </div>
     </div>
@@ -173,6 +190,14 @@
 
 @section Scripts {
 <script>
+    function quickCompAsk(text) {
+        const input = document.getElementById('compQInput');
+        input.value = text;
+        sendCompQuestion();
+    }
+
+    let compMsgCounter = 0;
+
     async function sendCompQuestion() {
         const input = document.getElementById('compQInput');
         const question = input.value.trim();
@@ -180,22 +205,47 @@
 
         const chatHistory = document.getElementById('compChatHistory');
         const btnSend = document.getElementById('btnCompSend');
+        const currentMsgId = ++compMsgCounter;
 
+        // Append Auditor user bubble
         const userDiv = document.createElement('div');
-        userDiv.style.margin = '0.5rem 0';
-        userDiv.innerHTML = `<strong style="color:#0f172a;">Auditor:</strong> ${question}`;
+        userDiv.className = 'copilot-bubble-wrapper-user';
+        userDiv.innerHTML = `
+            <span class="copilot-sender-label">Compliance Auditor</span>
+            <div class="copilot-bubble-user" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); max-width: 85%;">
+                ${escapeCompHtml(question)}
+            </div>
+        `;
         chatHistory.appendChild(userDiv);
         input.value = '';
         btnSend.disabled = true;
 
-        const aiDiv = document.createElement('div');
-        aiDiv.style.margin = '0.5rem 0';
-        aiDiv.style.color = '#1e3a8a';
-        const aiText = document.createElement('span');
-        aiDiv.innerHTML = `<strong style="color:#2563eb;">AI Guide:</strong> `;
-        aiDiv.appendChild(aiText);
-        chatHistory.appendChild(aiDiv);
+        // Create Assistant bubble with typing shimmer
+        const assistantWrapper = document.createElement('div');
+        assistantWrapper.className = 'copilot-bubble-wrapper-assistant';
+        assistantWrapper.innerHTML = `
+            <span class="copilot-sender-label" style="color: #0d9488;">Compliance Copilot</span>
+            <div class="copilot-bubble-assistant" id="comp-bubble-${currentMsgId}" style="max-width: 95%;">
+                <div class="copilot-typing-shimmer" id="comp-shimmer-${currentMsgId}">
+                    <span class="copilot-typing-dot"></span>
+                    <span class="copilot-typing-dot"></span>
+                    <span class="copilot-typing-dot"></span>
+                    <span>Querying regulatory policy index...</span>
+                </div>
+                <div class="copilot-content-text" id="comp-text-${currentMsgId}" style="display: none;"></div>
+            </div>
+        `;
+        chatHistory.appendChild(assistantWrapper);
         chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        const bubbleElem = document.getElementById(`comp-bubble-${currentMsgId}`);
+        const shimmerElem = document.getElementById(`comp-shimmer-${currentMsgId}`);
+        const textElem = document.getElementById(`comp-text-${currentMsgId}`);
+
+        let fullRawText = '';
+        let citations = [];
+        let disclaimerText = '';
+        let isFirstToken = true;
 
         try {
             const encodedQ = encodeURIComponent(question);
@@ -220,33 +270,104 @@
                         try {
                             const parsed = JSON.parse(dataStr);
                             if (parsed.chunk) {
-                                aiText.innerText += parsed.chunk;
+                                if (isFirstToken) {
+                                    if (shimmerElem) shimmerElem.style.display = 'none';
+                                    if (textElem) textElem.style.display = 'block';
+                                    isFirstToken = false;
+                                }
+                                fullRawText += parsed.chunk;
+                                textElem.innerHTML = renderCompFormatted(fullRawText, currentMsgId);
                                 chatHistory.scrollTop = chatHistory.scrollHeight;
                             }
-                            if (parsed.isFinal && parsed.citations && parsed.citations.length > 0) {
-                                const citeEl = document.createElement('div');
-                                citeEl.style.fontSize = '0.75rem';
-                                citeEl.style.color = '#475569';
-                                citeEl.style.marginTop = '0.5rem';
-                                citeEl.style.paddingTop = '0.35rem';
-                                citeEl.style.borderTop = '1px solid #f1f5f9';
-
-                                let citeHtml = '<strong style="display: block; margin-bottom: 0.25rem; color: #1e3a8a;">📚 Grounded Policy Sources:</strong>';
-                                parsed.citations.forEach((c, idx) => {
-                                    citeHtml += `<span style="display: inline-block; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.15rem 0.45rem; border-radius: 4px; margin-right: 0.35rem; margin-bottom: 0.25rem;">[${idx + 1}] ${c.title || c.documentTitle || 'Policy'} (Sec. ${c.section || 'N/A'})</span>`;
-                                });
-                                citeEl.innerHTML = citeHtml;
-                                aiDiv.appendChild(citeEl);
+                            if (parsed.citations) {
+                                citations = parsed.citations;
+                            }
+                            if (parsed.disclaimer) {
+                                disclaimerText = parsed.disclaimer;
                             }
                         } catch (e) {}
                     }
                 }
             }
+
+            // Grounded Policy Sources footer strip
+            if (citations && citations.length > 0) {
+                const sourcesStrip = document.createElement('div');
+                sourcesStrip.className = 'copilot-sources-strip';
+                let chipsHtml = citations.map((c, idx) => {
+                    const docTitle = c.documentTitle || c.title || 'Policy';
+                    const sec = c.section ? ` (Sec. ${escapeCompHtml(c.section)})` : '';
+                    const ver = c.policyVersion ? ` <span style="font-size:0.68rem; color:#059669;">v${escapeCompHtml(c.policyVersion)}</span>` : '';
+                    const excerpt = escapeCompHtml(c.excerpt || '');
+                    return `
+                        <div class="copilot-source-chip" id="comp-source-${currentMsgId}-${idx + 1}" title="${excerpt}">
+                            <span class="copilot-source-num">[${idx + 1}]</span>
+                            <strong>${escapeCompHtml(docTitle)}</strong>${sec}${ver}
+                        </div>
+                    `;
+                }).join('');
+
+                sourcesStrip.innerHTML = `
+                    <div class="copilot-sources-title">
+                        📚 Grounded Policy Sources
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                        ${chipsHtml}
+                    </div>
+                `;
+                bubbleElem.appendChild(sourcesStrip);
+            }
+
+            // Regulatory Disclaimer Strip
+            const disclaimerStrip = document.createElement('div');
+            disclaimerStrip.className = 'copilot-disclaimer-strip';
+            disclaimerStrip.innerHTML = `
+                <span>⚖️</span>
+                <div>
+                    <strong>Regulatory Advisory:</strong> ${escapeCompHtml(disclaimerText || 'Compliance guidance is grounded in active consumer protection & fair lending guides.')}
+                </div>
+            `;
+            bubbleElem.appendChild(disclaimerStrip);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
         } catch (err) {
-            aiText.innerText += ' [Network error]';
+            if (shimmerElem) shimmerElem.style.display = 'none';
+            if (textElem) {
+                textElem.style.display = 'block';
+                textElem.innerHTML = `<span style="color: #dc2626;">Error communicating with AI assistant: ${escapeCompHtml(err.message)}</span>`;
+            }
         } finally {
             btnSend.disabled = false;
         }
+    }
+
+    function renderCompFormatted(text, msgId) {
+        let html = escapeCompHtml(text);
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\n/g, '<br/>');
+        html = html.replace(/\[(\d+)\]/g, function(match, num) {
+            return `<span class="copilot-cite-pill" title="Jump to source [${num}]" onclick="scrollToCompSource('${msgId}', '${num}')">[${num}]</span>`;
+        });
+        return html;
+    }
+
+    function scrollToCompSource(msgId, num) {
+        const sourceEl = document.getElementById(`comp-source-${msgId}-${num}`);
+        if (sourceEl) {
+            sourceEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            sourceEl.style.borderColor = '#0d9488';
+            sourceEl.style.backgroundColor = '#f0fdfa';
+            setTimeout(() => {
+                sourceEl.style.borderColor = '';
+                sourceEl.style.backgroundColor = '';
+            }, 1800);
+        }
+    }
+
+    function escapeCompHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML;
     }
 </script>
 }
