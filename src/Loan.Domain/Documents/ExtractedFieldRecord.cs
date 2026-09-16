@@ -18,7 +18,7 @@ public class ExtractedFieldRecord
     public string ProvenanceExcerpt { get; }
     public bool IsSensitive { get; }
     public bool IsValidFormat { get; }
-    public bool NeedsConfirmation => ConfidenceScore < 0.85f || !IsValidFormat || Status == FieldConfirmationStatus.Unconfirmed;
+    public bool NeedsConfirmation => (ConfidenceScore < 0.85f || !IsValidFormat) && Status == FieldConfirmationStatus.Unconfirmed;
     public FieldConfirmationStatus Status { get; private set; }
     public string? ConfirmedValue { get; private set; }
     public string? ConfirmedBy { get; private set; }

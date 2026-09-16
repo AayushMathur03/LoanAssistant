@@ -191,17 +191,29 @@ public class LoanApplication
 
         _documentAuditTrail.Add(audit);
 
-        // Update Facts dynamically if candidate field affects income/debt
+        // Update Facts dynamically if candidate field affects income/debt/identity
         if (decimal.TryParse(confirmedValue, out var numValue))
         {
-            if (fieldName.Equals("MonthlyGrossIncome", StringComparison.OrdinalIgnoreCase) || fieldName.Equals("StatedIncome", StringComparison.OrdinalIgnoreCase))
+            if (fieldName.Equals("MonthlyGrossIncome", StringComparison.OrdinalIgnoreCase) || 
+                fieldName.Equals("StatedIncome", StringComparison.OrdinalIgnoreCase) ||
+                fieldName.Equals("GrossIncome", StringComparison.OrdinalIgnoreCase))
             {
                 Facts = new ApplicantFacts(Facts.ApplicantId, Facts.FullName, Facts.SyntheticId, new Money(numValue), Facts.MonthlyDebts, Facts.RequestedLoanAmount, Facts.EstimatedPropertyValue, Facts.CreditScore, Facts.EmploymentStatus, Facts.LoanPurpose);
+                Facts.SetIncomeVerified(true, new Money(numValue), timestampUtc);
             }
             else if (fieldName.Equals("StatedDebts", StringComparison.OrdinalIgnoreCase) || fieldName.Equals("MonthlyDebts", StringComparison.OrdinalIgnoreCase))
             {
                 Facts = new ApplicantFacts(Facts.ApplicantId, Facts.FullName, Facts.SyntheticId, Facts.MonthlyGrossIncome, new Money(numValue), Facts.RequestedLoanAmount, Facts.EstimatedPropertyValue, Facts.CreditScore, Facts.EmploymentStatus, Facts.LoanPurpose);
             }
+            else if (fieldName.Equals("CreditScore", StringComparison.OrdinalIgnoreCase))
+            {
+                Facts.SetCreditVerified(true, (int)numValue, timestampUtc);
+            }
+        }
+        else if (fieldName.Equals("FullName", StringComparison.OrdinalIgnoreCase) || 
+                 fieldName.Equals("DocumentNumber", StringComparison.OrdinalIgnoreCase))
+        {
+            Facts.SetIdentityVerified(true, timestampUtc);
         }
 
         UpdatedAtUtc = timestampUtc;

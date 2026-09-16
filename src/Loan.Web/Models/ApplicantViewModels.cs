@@ -52,15 +52,34 @@ public class ApplicantDashboardViewModel : IReadOnlyList<LoanApplication>
             bool hasIncome = ActiveApplication.Documents.Any(d => d.DocumentType is DocumentType.Paystub or DocumentType.W2 or DocumentType.TaxReturn);
             bool hasBank = ActiveApplication.Documents.Any(d => d.DocumentType == DocumentType.BankStatement);
 
+            if (!hasIncome) items.Add("Recent 30-Day Paystub or W-2");
             if (!hasId) items.Add("Government Photo ID (Driver License or Passport)");
-            if (!hasIncome) items.Add("Income Verification (Recent Paystub or W-2)");
-            if (!hasBank) items.Add("Asset Verification (Bank Statement - 60 to 90 Days)");
+
+            if (ActiveApplication.ProductRules.RequiresPropertyValuation || ActiveApplication.ProductId == "MORTGAGE-STD")
+            {
+                if (!hasBank) items.Add("60-Day Bank Statement (Asset Verification)");
+            }
+
+            // Also check for any unconfirmed low-confidence fields
+            foreach (var doc in ActiveApplication.Documents)
+            {
+                foreach (var f in doc.Fields)
+                {
+                    if (f.NeedsConfirmation)
+                    {
+                        items.Add($"Confirm Low-Confidence Field: {doc.DocumentType} '{f.FieldName}' ({f.ConfidenceScore:P0} confidence)");
+                    }
+                }
+            }
 
             if (ActiveApplication.Indicators != null)
             {
                 foreach (var cond in ActiveApplication.Indicators.UnmetConditions)
                 {
-                    if (!items.Contains(cond)) items.Add(cond);
+                    if (cond.Contains("verification", StringComparison.OrdinalIgnoreCase) && !items.Contains(cond))
+                    {
+                        items.Add(cond);
+                    }
                 }
             }
 

@@ -216,6 +216,15 @@ public class ApplicantController : Controller
                     // Re-evaluate eligibility after new document facts
                     await _evaluateEligibilityHandler.HandleAsync(new EvaluateEligibilityCommand(targetAppId));
 
+                    if (_draftHandler != null)
+                    {
+                        try
+                        {
+                            await _draftHandler.HandleAsync(new GenerateRecommendationDraftCommand(targetAppId));
+                        }
+                        catch { }
+                    }
+
                     SetFlashMessage("SuccessMessage", $"Document '{uploadFileName}' successfully uploaded and stored in private container. {docRecord.Fields.Count} facts extracted.");
                     ViewBag.ExtractedRecord = docRecord;
                 }
@@ -230,7 +239,7 @@ public class ApplicantController : Controller
             SetFlashMessage("ErrorMessage", "Please select a file to upload or choose a synthetic demo document.");
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { tab = "applications", applicationId = targetAppId });
     }
 
     [HttpPost]
@@ -257,6 +266,15 @@ public class ApplicantController : Controller
             await _confirmHandler.HandleAsync(command);
             await _evaluateEligibilityHandler.HandleAsync(new EvaluateEligibilityCommand(targetAppId));
 
+            if (_draftHandler != null)
+            {
+                try
+                {
+                    await _draftHandler.HandleAsync(new GenerateRecommendationDraftCommand(targetAppId));
+                }
+                catch { }
+            }
+
             SetFlashMessage("SuccessMessage", $"Field '{fieldName}' confirmed as '{confirmedValue}'. Precedence rules updated effective facts.");
         }
         catch (Exception ex)
@@ -264,7 +282,7 @@ public class ApplicantController : Controller
             SetFlashMessage("ErrorMessage", $"Field confirmation failed: {ex.Message}");
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { tab = "applications", applicationId = targetAppId });
     }
 
     [HttpGet]

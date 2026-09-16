@@ -165,4 +165,82 @@ public class MultiAgentOrchestrationTests
         Assert.That(recDto.RiskScore, Is.EqualTo(expectedRiskScore));
         Assert.That(recDto.Status, Is.EqualTo(RecommendationStatus.DraftPreparedBySystem));
     }
+
+    [Test]
+    public async Task Orchestrator_WhenLowConfidenceDocumentUnconfirmed_GatesRoutingToPendingInformation()
+    {
+        var rules = ProductRules.CreateStandardMortgage("v1.2");
+        var facts = new ApplicantFacts("APP-100", "Bob Brown", "SYN-888777", new Money(9500m), new Money(2500m), new Money(300000m), new Money(450000m), 720, "Employed", "Purchase");
+        facts.SetIdentityVerified(true, DateTime.UtcNow);
+        facts.SetCreditVerified(true, 720, DateTime.UtcNow);
+
+        var appId = "APP-TEST-LOWCONF-001";
+        var app = new LoanApplication(appId, "APP-100", rules, facts, DateTime.UtcNow);
+
+        // Add verified identity and bank statement
+        var idDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-ID-1", appId, "id.txt", "text/plain", 100, "blob-id", "hash1", Loan.Domain.Documents.DocumentType.DriverLicenseOrPassport, DateTime.UtcNow);
+        idDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("FullName", "Bob Brown", "Bob Brown", 0.98f, "DOC-ID-1", "header", false, true, Loan.Domain.Documents.FieldConfirmationStatus.ConfirmedByApplicant) });
+        app.AddDocumentRecord(idDoc, DateTime.UtcNow);
+
+        var bankDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-BANK-1", appId, "bank.txt", "text/plain", 100, "blob-bank", "hash2", Loan.Domain.Documents.DocumentType.BankStatement, DateTime.UtcNow);
+        bankDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("AverageMonthlyBalance", "50000.00", "50000.00", 0.95f, "DOC-BANK-1", "summary", false, true, Loan.Domain.Documents.FieldConfirmationStatus.ConfirmedByApplicant) });
+        app.AddDocumentRecord(bankDoc, DateTime.UtcNow);
+
+        // Add smudged paystub with 72% confidence (NeedsConfirmation = true)
+        var smudgedDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-PAY-1", appId, "smudged_paystub.txt", "text/plain", 100, "blob-pay", "hash3", Loan.Domain.Documents.DocumentType.Paystub, DateTime.UtcNow);
+        smudgedDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("MonthlyGrossIncome", "9500.00", "9500.00", 0.72f, "DOC-PAY-1", "gross pay", false, true, Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed) });
+        app.AddDocumentRecord(smudgedDoc, DateTime.UtcNow);
+
+        await _appRepo.AddAsync(app);
+        await _evalHandler.HandleAsync(new EvaluateEligibilityCommand(appId));
+
+        var updatedApp = await _appRepo.GetByIdAsync(appId);
+        var recDto = await _orchestrator.ProcessApplicationAsync(updatedApp!);
+
+        // Must be gated to PendingInformation due to unresolved low-confidence field
+        Assert.That(recDto.DecisionRecommendation, Is.EqualTo(RecommendationType.PendingInformation));
+        Assert.That(recDto.MissingEvidenceItems.Any(i => i.Contains("MonthlyGrossIncome")), Is.True);
+        Assert.That(updatedApp!.Status, Is.EqualTo(ApplicationStatus.InformationRequested));
+    }
+
+    [Test]
+    public async Task Orchestrator_WhenLowConfidenceFieldConfirmed_AdvancesToOfficerReviewAndUpdatesFactSet()
+    {
+        var rules = ProductRules.CreateStandardMortgage("v1.2");
+        var facts = new ApplicantFacts("APP-100", "Bob Brown", "SYN-888777", new Money(9500m), new Money(2500m), new Money(300000m), new Money(450000m), 720, "Employed", "Purchase");
+        facts.SetIdentityVerified(true, DateTime.UtcNow);
+        facts.SetCreditVerified(true, 720, DateTime.UtcNow);
+
+        var appId = "APP-TEST-CONFIRM-002";
+        var app = new LoanApplication(appId, "APP-100", rules, facts, DateTime.UtcNow);
+
+        var idDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-ID-2", appId, "id.txt", "text/plain", 100, "blob-id", "hash1", Loan.Domain.Documents.DocumentType.DriverLicenseOrPassport, DateTime.UtcNow);
+        idDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("FullName", "Bob Brown", "Bob Brown", 0.98f, "DOC-ID-2", "header", false, true, Loan.Domain.Documents.FieldConfirmationStatus.ConfirmedByApplicant) });
+        app.AddDocumentRecord(idDoc, DateTime.UtcNow);
+
+        var bankDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-BANK-2", appId, "bank.txt", "text/plain", 100, "blob-bank", "hash2", Loan.Domain.Documents.DocumentType.BankStatement, DateTime.UtcNow);
+        bankDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("AverageMonthlyBalance", "50000.00", "50000.00", 0.95f, "DOC-BANK-2", "summary", false, true, Loan.Domain.Documents.FieldConfirmationStatus.ConfirmedByApplicant) });
+        app.AddDocumentRecord(bankDoc, DateTime.UtcNow);
+
+        var smudgedDoc = new Loan.Domain.Documents.ExtractedDocumentRecord("DOC-PAY-2", appId, "smudged_paystub.txt", "text/plain", 100, "blob-pay", "hash3", Loan.Domain.Documents.DocumentType.Paystub, DateTime.UtcNow);
+        smudgedDoc.AddExtractedFields(new[] { new Loan.Domain.Documents.ExtractedFieldRecord("MonthlyGrossIncome", "9500.00", "9500.00", 0.72f, "DOC-PAY-2", "gross pay", false, true, Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed) });
+        app.AddDocumentRecord(smudgedDoc, DateTime.UtcNow);
+
+        // Confirm field by applicant
+        app.ConfirmOrOverrideField("DOC-PAY-2", "MonthlyGrossIncome", "9500.00", "APP-100", "Applicant", "Confirmed from paper stub", "CORR-1", DateTime.UtcNow);
+
+        // Verify domain Confirmed Fact Set updated
+        Assert.That(app.Facts.IsIncomeVerified, Is.True);
+        Assert.That(app.Facts.EffectiveMonthlyIncome.Amount, Is.EqualTo(9500.00m));
+
+        await _appRepo.AddAsync(app);
+        await _evalHandler.HandleAsync(new EvaluateEligibilityCommand(appId));
+
+        var updatedApp = await _appRepo.GetByIdAsync(appId);
+        var recDto = await _orchestrator.ProcessApplicationAsync(updatedApp!);
+
+        // With all items confirmed and valid metrics, should advance to Approve / ReadyForOfficerReview
+        Assert.That(recDto.DecisionRecommendation, Is.EqualTo(RecommendationType.Approve));
+        Assert.That(updatedApp!.Status, Is.EqualTo(ApplicationStatus.UnderOfficerReview));
+    }
 }

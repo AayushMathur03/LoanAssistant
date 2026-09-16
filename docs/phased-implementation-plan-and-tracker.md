@@ -50,15 +50,19 @@ graph TD
 
 ### Phase 2: Spec Status Alignment, Evidence Blocking & Confirmed Agent Flow (Tasks 2 & 7)
 **Goal**: Ensure document extraction reliably blocks unverified progress, and aligns lifecycle statuses with the spec (`PendingInformation` $\rightarrow$ `ReadyForReview` $\rightarrow$ `Approved` $\rightarrow$ `ReturnedForInfo`).
-- [ ] **Task 7: Spec-Accurate Status Flow**
-  - [ ] Standardize statuses: `InformationRequested` (Pending Information), `UnderOfficerReview` (Ready for Review), `Approved`, `Rejected`, and `ReturnedForInfo` (`OfficerReturnForInfo`).
-  - [ ] Display prominent, actionable amber alert banner when status is `InformationRequested` or `ReturnedForInfo` stating exactly what is missing.
-  - [ ] Verify Officer review queue correctly partitions and handles these statuses.
-- [ ] **Task 2: Mandatory Document Gate & Confirmed Fact Set**
-  - [ ] Upload validation checks for required document types per product.
-  - [ ] Low-confidence fields ($< 0.85$) display amber warning meter and hold application in `InformationRequested` until confirmed via modal.
-  - [ ] `DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, and `ComplianceReviewAgent` strictly consume the single Confirmed Fact Set (`Facts.EffectiveMonthlyIncome`, `EffectiveCreditScore` updated from confirmed documents).
-- **Status**: 🟡 **PENDING — READY TO START (NEXT PHASE)**
+- [x] **Task 7: Spec-Accurate Status Flow**
+  - [x] Standardize statuses: `InformationRequested` (Pending Information), `UnderOfficerReview` (Ready for Review), `Approved`, `Rejected`, and `ReturnedForInfo` (`OfficerReturnForInfo`).
+  - [x] Display prominent, actionable amber alert banner when status is `InformationRequested` or `ReturnedForInfo` stating exactly what is missing.
+  - [x] Verify Officer review queue correctly partitions and handles these statuses (`RequestInformation` action transitions through domain `OfficerDecisionCommand`).
+  - *Files*: `src/Loan.Domain/Applications/LoanApplication.cs`, `src/Loan.Web/Views/Applicant/Index.cshtml`, `src/Loan.Web/Controllers/OfficerController.cs`, `src/Loan.Web/Models/ApplicantViewModels.cs`.
+- [x] **Task 2: Mandatory Document Gate & Confirmed Fact Set**
+  - [x] Upload validation checks for required document types per product (Mortgage checks income, ID, bank statement; Personal Loan checks income and ID).
+  - [x] Low-confidence fields ($< 0.85$) display amber warning meter and hold application in `InformationRequested` until confirmed via modal.
+  - [x] `NeedsConfirmation` property in `ExtractedFieldRecord` strictly flags low-confidence or format-invalid fields while unconfirmed.
+  - [x] `DocumentAnalysisAgent`, `EligibilityAnalysisAgent`, and `ComplianceReviewAgent` strictly consume the single Confirmed Fact Set (`Facts.EffectiveMonthlyIncome`, `EffectiveCreditScore` updated from confirmed documents).
+  - [x] Field confirmation dynamically updates `application.Facts` verified state and triggers real-time draft re-evaluation.
+  - *Files*: `src/Loan.Domain/Documents/ExtractedFieldRecord.cs`, `src/Loan.Domain/Applications/LoanApplication.cs`, `src/Loan.Application/Agents/DocumentAnalysisAgent.cs`, `src/Loan.Application/Recommendations/RecommendationCommands.cs`, `src/Loan.Application/Documents/UploadAndExtractDocumentCommand.cs`, `src/Loan.Web/Controllers/ApplicantController.cs`.
+- **Status**: 🟢 **100% COMPLETE (Verified across 152 automated tests)**
 
 ---
 
@@ -70,7 +74,7 @@ graph TD
   - [ ] Dedicated "📚 Grounded Policy Sources" footer strip separated visually below each response with clickable chips: `[1] Policy Guide — Section X.X`.
   - [ ] Clear non-approval disclaimer displayed in the footer strip on all responses.
   - [ ] Implement consistently across Applicant (`Applicant/Index.cshtml`), Loan Officer (`Officer/Review.cshtml`), and Compliance Reviewer (`Compliance/Index.cshtml`).
-- **Status**: ⚪ **PENDING (Awaiting Phase 2 completion)**
+- **Status**: 🟡 **PENDING — READY TO START (NEXT PHASE)**
 
 ---
 
@@ -96,6 +100,6 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | **Phase 0** | Foundation, Demo Data & DB Migrations | Seeding & EF Core | 🟢 **100% COMPLETE** |
 | **Phase 1** | Info Architecture & Loan Customizer | Tasks 1 & 9 | 🟢 **100% COMPLETE** |
-| **Phase 2** | Statuses, Evidence & Confirmed Agent Flow | Tasks 2 & 7 | 🟡 **PENDING — NEXT UP** |
-| **Phase 3** | Premium Chat Experience & Footers | Task 8 | ⚪ **PENDING** |
-| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | ⚪ **PENDING** |
+| **Phase 2** | Statuses, Evidence & Confirmed Agent Flow | Tasks 2 & 7 | 🟢 **100% COMPLETE** |
+| **Phase 3** | Premium Chat Experience & Footers | Task 8 | 🟡 **READY TO START (NEXT)** |
+| **Phase 4** | Dynamic Admin Ingestion, SK/MCP & Scenarios | Tasks 3, 4, 5, 6 | ⚪ **PENDING (Awaiting Phase 3)** |

@@ -265,13 +265,17 @@ public class OfficerController : Controller
     public async Task<IActionResult> RequestInformation(string id, string requestedItems)
     {
         ViewData["ActiveNav"] = "Officer";
-        var app = await _applicationRepository.GetByIdAsync(id);
-        if (app != null)
+        var effectiveOfficerId = User?.Identity?.Name ?? "OFFICER-42";
+        var notes = string.IsNullOrWhiteSpace(requestedItems) ? "Additional evidence requested by underwriter" : requestedItems.Trim();
+        try
         {
-            typeof(LoanApplication).GetProperty(nameof(LoanApplication.Status))!
-                .SetValue(app, ApplicationStatus.InformationRequested);
-            await _applicationRepository.UpdateAsync(app);
-            SetFlashMessage("SuccessMessage", $"Application #{id} status updated to InformationRequested. Requested: {requestedItems}");
+            var command = new OfficerDecisionCommand(id, effectiveOfficerId, RecommendationStatus.ReturnedForInfo, notes);
+            await _decisionHandler.HandleAsync(command);
+            SetFlashMessage("SuccessMessage", $"Application #{id} status updated to InformationRequested. Requested: {notes}");
+        }
+        catch (Exception ex)
+        {
+            SetFlashMessage("ErrorMessage", $"Could not request information: {ex.Message}");
         }
         return RedirectToAction("Review", new { id });
     }

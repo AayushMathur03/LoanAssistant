@@ -81,18 +81,38 @@ public class UploadAndExtractDocumentCommandHandler
             documentType: docType,
             uploadedAtUtc: timestamp);
 
-        var fieldRecords = extraction.ExtractedFields.Select(f => new ExtractedFieldRecord(
-            fieldName: f.FieldName,
-            displayValue: f.RawValue ?? string.Empty,
-            rawValueMasked: f.RawValue ?? string.Empty,
-            confidenceScore: f.ConfidenceScore,
-            sourceDocumentId: f.SourceDocumentId,
-            provenanceExcerpt: $"Extracted from {validation.SanitizedFileName} ({f.FieldName})",
-            isSensitive: f.FieldName.Equals("SSN", StringComparison.OrdinalIgnoreCase) || f.FieldName.Equals("AccountNumber", StringComparison.OrdinalIgnoreCase) || f.FieldName.Equals("EmployerEin", StringComparison.OrdinalIgnoreCase),
-            isValidFormat: !f.NeedsConfirmation || f.ConfidenceScore >= 0.85f,
-            status: FieldConfirmationStatus.Unconfirmed)).ToList();
+        var fieldRecords = extraction.ExtractedFields.Select(f => {
+            bool isHighConfidence = f.ConfidenceScore >= 0.85f;
+            return new ExtractedFieldRecord(
+                fieldName: f.FieldName,
+                displayValue: f.RawValue ?? string.Empty,
+                rawValueMasked: f.RawValue ?? string.Empty,
+                confidenceScore: f.ConfidenceScore,
+                sourceDocumentId: f.SourceDocumentId,
+                provenanceExcerpt: $"Extracted from {validation.SanitizedFileName} ({f.FieldName})",
+                isSensitive: f.FieldName.Equals("SSN", StringComparison.OrdinalIgnoreCase) || f.FieldName.Equals("AccountNumber", StringComparison.OrdinalIgnoreCase) || f.FieldName.Equals("EmployerEin", StringComparison.OrdinalIgnoreCase),
+                isValidFormat: isHighConfidence,
+                status: isHighConfidence ? FieldConfirmationStatus.ConfirmedByApplicant : FieldConfirmationStatus.Unconfirmed);
+        }).ToList();
 
         docRecord.AddExtractedFields(fieldRecords);
+
+        // Update Confirmed Fact Set if high confidence income / identity document
+        var incomeField = fieldRecords.FirstOrDefault(f => 
+            (f.FieldName.Equals("MonthlyGrossIncome", StringComparison.OrdinalIgnoreCase) || 
+             f.FieldName.Equals("GrossIncome", StringComparison.OrdinalIgnoreCase) ||
+             f.FieldName.Equals("StatedIncome", StringComparison.OrdinalIgnoreCase)) && 
+            f.ConfidenceScore >= 0.85f);
+
+        if (incomeField != null && decimal.TryParse(incomeField.DisplayValue, out var incVal) && incVal > 0)
+        {
+            application.Facts.SetIncomeVerified(true, new Domain.Common.Money(incVal), timestamp);
+        }
+
+        if (docType == DocumentType.DriverLicenseOrPassport && fieldRecords.All(f => f.ConfidenceScore >= 0.80f))
+        {
+            application.Facts.SetIdentityVerified(true, timestamp);
+        }
 
         // 6. Update LoanApplication aggregate and save persistence
         application.AddDocumentRecord(docRecord, timestamp);

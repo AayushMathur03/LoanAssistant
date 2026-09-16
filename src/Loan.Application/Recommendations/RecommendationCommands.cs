@@ -30,11 +30,41 @@ public class GenerateRecommendationDraftCommandHandler
         }
 
         var missingEvidence = app.Indicators.UnmetConditions
-            .Where(c => c.Contains("verification"))
+            .Where(c => c.Contains("verification", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        // Document Gating: Check for unconfirmed low-confidence fields across documents
+        foreach (var doc in app.Documents)
+        {
+            foreach (var f in doc.Fields)
+            {
+                if (f.NeedsConfirmation)
+                {
+                    missingEvidence.Add($"Unconfirmed low-confidence field '{f.FieldName}' in {doc.DocumentType} ({f.ConfidenceScore:P0} confidence). Confirmation required.");
+                }
+            }
+        }
+
+        // Check for missing mandatory document types per product
+        bool hasIncomeDoc = app.Documents.Any(d => d.DocumentType is Domain.Documents.DocumentType.Paystub or Domain.Documents.DocumentType.W2 or Domain.Documents.DocumentType.TaxReturn);
+        bool hasIdDoc = app.Documents.Any(d => d.DocumentType == Domain.Documents.DocumentType.DriverLicenseOrPassport);
+        bool hasBankDoc = app.Documents.Any(d => d.DocumentType == Domain.Documents.DocumentType.BankStatement);
+
+        if (!app.Facts.IsIncomeVerified && !hasIncomeDoc && !missingEvidence.Any(e => e.Contains("Income", StringComparison.OrdinalIgnoreCase)))
+        {
+            missingEvidence.Add("Missing mandatory evidence: Recent 30-Day Paystub or W-2");
+        }
+        if (!app.Facts.IsIdentityVerified && !hasIdDoc && !missingEvidence.Any(e => e.Contains("Identity", StringComparison.OrdinalIgnoreCase)))
+        {
+            missingEvidence.Add("Missing mandatory evidence: Government Photo ID (Driver License or Passport)");
+        }
+        if (app.Documents.Count > 0 && (app.ProductRules.ProductId == "MORTGAGE-STD" || app.ProductRules.RequiresPropertyValuation) && !hasBankDoc)
+        {
+            missingEvidence.Add("Missing mandatory evidence: 60-Day Bank Statement");
+        }
+
         var policyViolations = app.Indicators.UnmetConditions
-            .Where(c => !c.Contains("verification"))
+            .Where(c => !c.Contains("verification", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         RecommendationType systemType;

@@ -25,7 +25,9 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
 
         var recEntity = await _context.Recommendations
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.ApplicationId == applicationId, cancellationToken);
+            .Where(r => r.ApplicationId == applicationId)
+            .OrderByDescending(r => r.RecommendationId)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var recommendation = recEntity?.ToDomain();
         return entity.ToDomain(recommendation);
@@ -89,10 +91,15 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
             .ToListAsync(cancellationToken);
 
         var appIds = entities.Select(e => e.ApplicationId).ToList();
-        var recs = await _context.Recommendations
+        var recList = await _context.Recommendations
             .AsNoTracking()
             .Where(r => appIds.Contains(r.ApplicationId))
-            .ToDictionaryAsync(r => r.ApplicationId, cancellationToken);
+            .OrderByDescending(r => r.RecommendationId)
+            .ToListAsync(cancellationToken);
+
+        var recs = recList
+            .GroupBy(r => r.ApplicationId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         return entities.Select(e => e.ToDomain(recs.TryGetValue(e.ApplicationId, out var recEntity) ? recEntity.ToDomain() : null));
     }
@@ -105,10 +112,15 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
             .ToListAsync(cancellationToken);
 
         var appIds = entities.Select(e => e.ApplicationId).ToList();
-        var recs = await _context.Recommendations
+        var recList = await _context.Recommendations
             .AsNoTracking()
             .Where(r => appIds.Contains(r.ApplicationId))
-            .ToDictionaryAsync(r => r.ApplicationId, cancellationToken);
+            .OrderByDescending(r => r.RecommendationId)
+            .ToListAsync(cancellationToken);
+
+        var recs = recList
+            .GroupBy(r => r.ApplicationId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         return entities.Select(e => e.ToDomain(recs.TryGetValue(e.ApplicationId, out var recEntity) ? recEntity.ToDomain() : null));
     }
@@ -120,10 +132,15 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
             .ToListAsync(cancellationToken);
 
         var appIds = entities.Select(e => e.ApplicationId).ToList();
-        var recs = await _context.Recommendations
+        var recList = await _context.Recommendations
             .AsNoTracking()
             .Where(r => appIds.Contains(r.ApplicationId))
-            .ToDictionaryAsync(r => r.ApplicationId, cancellationToken);
+            .OrderByDescending(r => r.RecommendationId)
+            .ToListAsync(cancellationToken);
+
+        var recs = recList
+            .GroupBy(r => r.ApplicationId)
+            .ToDictionary(g => g.Key, g => g.First());
 
         return entities.Select(e => e.ToDomain(recs.TryGetValue(e.ApplicationId, out var recEntity) ? recEntity.ToDomain() : null));
     }
