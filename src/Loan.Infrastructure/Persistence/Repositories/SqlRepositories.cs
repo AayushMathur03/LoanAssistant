@@ -88,6 +88,7 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
         var entities = await _context.Applications
             .AsNoTracking()
             .Where(a => a.ApplicantId == applicantId)
+            .OrderByDescending(a => a.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
         var appIds = entities.Select(e => e.ApplicationId).ToList();

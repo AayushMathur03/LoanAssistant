@@ -396,6 +396,9 @@ public class ApplicantController : Controller
             }
         }
 
+        // Ensure all applications are strictly in reverse chronological order (newest first)
+        allApps = allApps.OrderByDescending(a => a.CreatedAtUtc).ToList();
+
         if (activeApp == null && currentUser?.LinkedApplicationId != null)
         {
             activeApp = allApps.FirstOrDefault(a => a.ApplicationId.Equals(currentUser.LinkedApplicationId, StringComparison.OrdinalIgnoreCase));

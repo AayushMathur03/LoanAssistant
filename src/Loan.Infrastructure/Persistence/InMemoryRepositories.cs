@@ -31,7 +31,9 @@ public class InMemoryLoanApplicationRepository : ILoanApplicationRepository
 
     public Task<IEnumerable<LoanApplication>> GetByApplicantIdAsync(string applicantId, CancellationToken cancellationToken = default)
     {
-        var results = _store.Values.Where(a => a.ApplicantId.Equals(applicantId, StringComparison.OrdinalIgnoreCase));
+        var results = _store.Values
+            .Where(a => a.ApplicantId.Equals(applicantId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(a => a.CreatedAtUtc);
         return Task.FromResult<IEnumerable<LoanApplication>>(results.ToList());
     }
 

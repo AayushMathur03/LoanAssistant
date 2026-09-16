@@ -520,26 +520,226 @@
 
         @if (Model.AllApplications.Any())
         {
-            <!-- Multi-Application Switcher Pills -->
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
-                <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; align-self: center; margin-right: 0.5rem;">Applications:</span>
-                @foreach (var candidate in Model.AllApplications)
-                {
-                    bool isSelected = app != null && app.ApplicationId == candidate.ApplicationId;
-                    <a href="@Url.Action("Index", new { tab = "applications", applicationId = candidate.ApplicationId })"
-                       style="padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; @(isSelected ? "background: #1e3a8a; color: white;" : "background: white; border: 1px solid #cbd5e1; color: #334155;")">
-                        <span>#@candidate.ApplicationId</span>
-                        <span style="font-size: 0.72rem; opacity: 0.9;">(@candidate.ProductRules.ProductName)</span>
-                        <span style="font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; @(candidate.Status == ApplicationStatus.Approved ? "background: #059669; color: white;" : candidate.Status == ApplicationStatus.InformationRequested ? "background: #d97706; color: white;" : "background: #3b82f6; color: white;")">
-                            @candidate.Status
-                        </span>
-                    </a>
+            <!-- My Applications Table Card -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.6rem;">
+                            <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">📋 My Submitted Applications</h2>
+                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px;">
+                                @Model.AllApplications.Count Total
+                            </span>
+                        </div>
+                        <p style="color: #64748b; font-size: 0.88rem; margin: 0.25rem 0 0 0;">
+                            Review all loan applications associated with your account, sorted with your most recent submissions first.
+                        </p>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1.15rem; border-radius: 8px; cursor: pointer;" onclick="openNewAppModal('Mortgage')">
+                        + New Application
+                    </button>
+                </div>
+
+                <!-- Status Filter Tabs -->
+                <div style="display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid #f1f5f9;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; align-self: center; margin-right: 0.35rem;">Filter by Status:</span>
+                    <button type="button" class="app-status-filter-btn active" data-filter="ALL" onclick="filterApplicationsByStatus('ALL', this)"
+                            style="padding: 0.38rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1.5px solid #2563eb; background: #2563eb; color: white; transition: all 0.15s ease;">
+                        All <span style="background: rgba(255,255,255,0.25); padding: 0.1rem 0.45rem; border-radius: 9999px; font-size: 0.72rem; margin-left: 0.25rem;">@Model.AllApplications.Count</span>
+                    </button>
+                    @foreach (var status in Enum.GetValues<ApplicationStatus>())
+                    {
+                        var count = Model.AllApplications.Count(a => a.Status == status);
+                        if (count > 0)
+                        {
+                            var statusLabel = status switch
+                            {
+                                ApplicationStatus.UnderVerification => "Under Verification",
+                                ApplicationStatus.InformationRequested => "Information Requested",
+                                ApplicationStatus.UnderOfficerReview => "Under Officer Review",
+                                ApplicationStatus.UnderDocumentReview => "Under Document Review",
+                                _ => status.ToString()
+                            };
+                            <button type="button" class="app-status-filter-btn" data-filter="@status.ToString()" onclick="filterApplicationsByStatus('@status.ToString()', this)"
+                                    style="padding: 0.38rem 0.85rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid #cbd5e1; background: white; color: #334155; transition: all 0.15s ease;">
+                                @statusLabel <span style="background: #f1f5f9; color: #475569; padding: 0.1rem 0.45rem; border-radius: 9999px; font-size: 0.72rem; margin-left: 0.25rem;">@count</span>
+                            </button>
+                        }
+                    }
+                </div>
+
+                <!-- Applications Table -->
+                <div style="overflow-x: auto;">
+                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Application ID</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Product</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Submitted Date</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Requested Amount</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Calculated DTI</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Calculated LTV</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Documents</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569;">Status</th>
+                                <th style="padding: 0.75rem 0.85rem; font-weight: 700; color: #475569; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var candidate in Model.AllApplications)
+                            {
+                                bool isSelected = app != null && app.ApplicationId == candidate.ApplicationId;
+                                var statusBg = candidate.Status switch
+                                {
+                                    ApplicationStatus.Approved => "background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;",
+                                    ApplicationStatus.Rejected => "background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;",
+                                    ApplicationStatus.InformationRequested => "background: #fef3c7; color: #92400e; border: 1px solid #fde68a;",
+                                    ApplicationStatus.UnderVerification => "background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;",
+                                    ApplicationStatus.UnderOfficerReview => "background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe;",
+                                    ApplicationStatus.UnderDocumentReview => "background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;",
+                                    ApplicationStatus.Submitted => "background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff;",
+                                    _ => "background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;"
+                                };
+
+                                var statusDisplay = candidate.Status switch
+                                {
+                                    ApplicationStatus.UnderVerification => "Under Verification",
+                                    ApplicationStatus.InformationRequested => "Information Requested",
+                                    ApplicationStatus.UnderOfficerReview => "Under Officer Review",
+                                    ApplicationStatus.UnderDocumentReview => "Under Document Review",
+                                    _ => candidate.Status.ToString()
+                                };
+
+                                <tr class="app-table-row" data-status="@candidate.Status.ToString()"
+                                    onclick="window.location='@Url.Action("Index", new { tab = "applications", applicationId = candidate.ApplicationId })'"
+                                    style="border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.15s ease; @(isSelected ? "background: #f0f7ff; border-left: 4px solid #2563eb;" : "")">
+                                    <td style="padding: 0.85rem; font-weight: 700; color: #0f172a;">
+                                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                            <span>#@candidate.ApplicationId</span>
+                                            @if (isSelected)
+                                            {
+                                                <span style="background: #2563eb; color: white; font-size: 0.65rem; font-weight: 700; padding: 0.12rem 0.4rem; border-radius: 4px;">
+                                                    VIEWING
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td style="padding: 0.85rem;">
+                                        <div style="font-weight: 600; color: #1e293b;">@candidate.ProductRules.ProductName</div>
+                                        <div style="font-size: 0.74rem; color: #64748b;">Policy: @candidate.ProductRules.EffectiveVersion</div>
+                                    </td>
+                                    <td style="padding: 0.85rem; color: #475569; font-size: 0.82rem; white-space: nowrap;">
+                                        @candidate.CreatedAtUtc.ToString("MMM dd, yyyy HH:mm") UTC
+                                    </td>
+                                    <td style="padding: 0.85rem; font-weight: 700; color: #0f172a;">
+                                        @candidate.Facts.RequestedLoanAmount
+                                    </td>
+                                    <td style="padding: 0.85rem; color: #334155;">
+                                        @(candidate.Indicators?.DebtToIncomeRatio != null ? $"{candidate.Indicators.DebtToIncomeRatio:P1}" : "Evaluating")
+                                    </td>
+                                    <td style="padding: 0.85rem; color: #334155;">
+                                        @(candidate.Indicators?.LoanToValueRatio != null ? $"{candidate.Indicators.LoanToValueRatio:P1}" : "N/A")
+                                    </td>
+                                    <td style="padding: 0.85rem; color: #475569;">
+                                        <span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.78rem; font-weight: 600;">
+                                            📄 @candidate.Documents.Count doc@(candidate.Documents.Count == 1 ? "" : "s")
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.85rem;">
+                                        <span class="badge" style="font-size: 0.74rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; @statusBg">
+                                            @statusDisplay
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.85rem; text-align: right;">
+                                        @if (isSelected)
+                                        {
+                                            <span style="color: #2563eb; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                                Active Below &darr;
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Index", new { tab = "applications", applicationId = candidate.ApplicationId })"
+                                               class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; text-decoration: none; border-radius: 6px; background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 0.3rem;"
+                                               onclick="event.stopPropagation();">
+                                                Open &rarr;
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            <tr id="noMatchingAppsRow" style="display: none;">
+                                <td colspan="9" style="text-align: center; color: #64748b; padding: 2rem; font-size: 0.9rem;">
+                                    🔍 No applications found matching the selected status filter.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Client-Side Instant Status Filtering Script -->
+            <script>
+                function filterApplicationsByStatus(status, btnElement) {
+                    document.querySelectorAll('.app-status-filter-btn').forEach(b => {
+                        b.style.background = 'white';
+                        b.style.borderColor = '#cbd5e1';
+                        b.style.color = '#334155';
+                        b.classList.remove('active');
+                    });
+                    if (btnElement) {
+                        btnElement.style.background = '#2563eb';
+                        btnElement.style.borderColor = '#2563eb';
+                        btnElement.style.color = 'white';
+                        btnElement.classList.add('active');
+                    }
+
+                    const rows = document.querySelectorAll('.app-table-row');
+                    let visibleCount = 0;
+                    rows.forEach(row => {
+                        const rowStatus = row.getAttribute('data-status');
+                        if (status === 'ALL' || rowStatus === status) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    const noMatchRow = document.getElementById('noMatchingAppsRow');
+                    if (noMatchRow) {
+                        noMatchRow.style.display = visibleCount === 0 ? '' : 'none';
+                    }
                 }
+            </script>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 3rem 1.5rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; margin-bottom: 2rem;">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;">📂</span>
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0 0 0.5rem 0;">No Loan Applications Yet</h3>
+                <p style="color: #64748b; font-size: 0.9rem; max-width: 460px; margin: 0 auto 1.25rem auto;">
+                    You have not submitted any loan applications yet. Explore our product catalogue or configure custom loan parameters to get started.
+                </p>
+                <a href="@Url.Action("Index", new { tab = "catalogue" })" class="btn btn-primary" style="font-weight: 700; padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none;">
+                    Explore Loan Products &rarr;
+                </a>
             </div>
         }
 
         @if (app != null)
         {
+            <!-- Active Application Details Section Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 1.25rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid #e2e8f0; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Application Details: #@app.ApplicationId</h2>
+                    <span style="font-size: 0.84rem; color: #64748b;">@app.ProductRules.ProductName &bull; Policy @app.ProductRules.EffectiveVersion &bull; Created @app.CreatedAtUtc.ToString("MMM dd, yyyy HH:mm") UTC</span>
+                </div>
+                <div>
+                    <span class="badge" style="font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px; @(app.Status == ApplicationStatus.Approved ? "background: #d1fae5; color: #065f46;" : app.Status == ApplicationStatus.Rejected ? "background: #fee2e2; color: #991b1b;" : app.Status == ApplicationStatus.InformationRequested ? "background: #fef3c7; color: #92400e;" : "background: #dbeafe; color: #1e40af;")">
+                        Status: @app.Status
+                    </span>
+                </div>
+            </div>
+
             @if (app.Status == ApplicationStatus.InformationRequested)
             {
                 <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1); display: flex; align-items: flex-start; gap: 1rem;">
