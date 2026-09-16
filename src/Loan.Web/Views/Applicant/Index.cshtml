@@ -6,6 +6,298 @@
     var isCatalogueTab = Model.ActiveTab == "catalogue";
 }
 
+<style>
+    /* Scoped styling to guarantee immediate, flawless rendering of Policy & Underwriting Copilot */
+    .copilot-chat-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 540px !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+    }
+    .copilot-chat-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 14px 28px -5px rgba(0, 0, 0, 0.07), 0 10px 12px -6px rgba(0, 0, 0, 0.03) !important;
+    }
+    .copilot-chat-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 1.1rem 1.35rem !important;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    .copilot-chat-header-title {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.6rem !important;
+    }
+    .copilot-chat-header-title h2 {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+        letter-spacing: -0.01em !important;
+    }
+    .copilot-live-dot {
+        display: inline-block !important;
+        width: 9px !important;
+        height: 9px !important;
+        border-radius: 50% !important;
+        background: #10b981 !important;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+        animation: copilot-pulse 2s infinite !important;
+    }
+    .copilot-chat-history {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        max-height: 420px !important;
+        padding: 1.25rem 1.35rem !important;
+        background: #f8fafc !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.25rem !important;
+        scroll-behavior: smooth !important;
+    }
+    .copilot-chat-history::-webkit-scrollbar {
+        width: 6px !important;
+    }
+    .copilot-chat-history::-webkit-scrollbar-track {
+        background: #f1f5f9 !important;
+    }
+    .copilot-chat-history::-webkit-scrollbar-thumb {
+        background: #cbd5e1 !important;
+        border-radius: 3px !important;
+    }
+    .copilot-bubble-wrapper-user {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 0.35rem !important;
+    }
+    .copilot-bubble-wrapper-assistant {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+    }
+    .copilot-sender-label {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        padding: 0 0.35rem !important;
+    }
+    .copilot-bubble-user {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+        color: #ffffff !important;
+        padding: 0.85rem 1.15rem !important;
+        border-radius: 18px 18px 4px 18px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.55 !important;
+        max-width: 84% !important;
+        box-shadow: 0 3px 6px rgba(37, 99, 235, 0.2) !important;
+        word-break: break-word !important;
+    }
+    .copilot-bubble-assistant {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 1.1rem 1.25rem !important;
+        border-radius: 18px 18px 18px 4px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.6 !important;
+        color: #1e293b !important;
+        max-width: 94% !important;
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05) !important;
+        word-break: break-word !important;
+    }
+    .copilot-typing-shimmer {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.45rem !important;
+        color: #64748b !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+    }
+    .copilot-typing-dot {
+        width: 7px !important;
+        height: 7px !important;
+        background: #2563eb !important;
+        border-radius: 50% !important;
+        animation: copilot-bounce 1.4s infinite ease-in-out both !important;
+    }
+    .copilot-cite-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #eff6ff !important;
+        color: #1d4ed8 !important;
+        font-weight: 700 !important;
+        font-size: 0.72rem !important;
+        padding: 0.12rem 0.4rem !important;
+        border-radius: 6px !important;
+        margin: 0 0.25rem !important;
+        border: 1px solid #bfdbfe !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+    }
+    .copilot-cite-pill:hover {
+        background: #dbeafe !important;
+        border-color: #93c5fd !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1) !important;
+    }
+    .copilot-sources-strip {
+        margin-top: 0.9rem !important;
+        padding: 0.75rem 0.85rem !important;
+        background: #f0fdf4 !important;
+        border: 1px solid #bbf7d0 !important;
+        border-radius: 8px !important;
+    }
+    .copilot-sources-title {
+        font-size: 0.76rem !important;
+        font-weight: 700 !important;
+        color: #166534 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+    .copilot-source-chip {
+        display: inline-flex !important;
+        align-items: center !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        padding: 0.3rem 0.65rem !important;
+        margin-right: 0.4rem !important;
+        margin-bottom: 0.35rem !important;
+        font-size: 0.75rem !important;
+        color: #334155 !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+    }
+    .copilot-source-chip:hover {
+        background: #f8fafc !important;
+        border-color: #94a3b8 !important;
+        color: #0f172a !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    .copilot-source-num {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        font-size: 0.68rem !important;
+        padding: 0.08rem 0.35rem !important;
+        border-radius: 4px !important;
+        margin-right: 0.35rem !important;
+    }
+    .copilot-disclaimer-strip {
+        margin-top: 0.75rem !important;
+        padding: 0.6rem 0.8rem !important;
+        background: #fffbeb !important;
+        border: 1px solid #fef3c7 !important;
+        border-radius: 8px !important;
+        font-size: 0.72rem !important;
+        color: #92400e !important;
+        line-height: 1.45 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    .copilot-prompt-chips {
+        display: flex !important;
+        gap: 0.5rem !important;
+        overflow-x: auto !important;
+        padding: 0.6rem 1.25rem !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+        scrollbar-width: thin !important;
+    }
+    .copilot-prompt-chip {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 9999px !important;
+        padding: 0.35rem 0.85rem !important;
+        font-size: 0.76rem !important;
+        color: #334155 !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+        font-weight: 600 !important;
+        transition: all 0.15s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    .copilot-prompt-chip:hover {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+        color: #1d4ed8 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1) !important;
+    }
+    .copilot-input-area {
+        padding: 0.85rem 1.25rem !important;
+        background: #ffffff !important;
+        border-top: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        gap: 0.65rem !important;
+        align-items: center !important;
+    }
+    .copilot-input-field {
+        flex: 1 !important;
+        padding: 0.7rem 1rem !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        font-size: 0.88rem !important;
+        color: #0f172a !important;
+        outline: none !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        background: #f8fafc !important;
+    }
+    .copilot-input-field:focus {
+        border-color: #2563eb !important;
+        background: #ffffff !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+    }
+    .copilot-send-btn {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.7rem 1.35rem !important;
+        font-weight: 700 !important;
+        font-size: 0.88rem !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.45rem !important;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25) !important;
+        white-space: nowrap !important;
+    }
+    .copilot-send-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.35) !important;
+        transform: translateY(-1px) !important;
+    }
+    .copilot-send-btn:disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+    }
+</style>
+
 <div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
     <!-- Welcome Header Banner -->
     <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 14px; padding: 1.75rem 2rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);">
@@ -392,40 +684,40 @@
             </div>
 
             <!-- Right Column: Live Streaming AI Assistant (Task 8 Copilot Experience) -->
-            <div class="copilot-chat-card">
-                <div class="copilot-chat-header">
-                    <div class="copilot-chat-header-title">
-                        <span class="copilot-live-dot"></span>
-                        <h2>🤖 Policy & Underwriting Assistant</h2>
+            <div class="copilot-chat-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; min-height: 540px; height: 100%; overflow: hidden;">
+                <div class="copilot-chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.35rem; background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 0.5rem;">
+                    <div class="copilot-chat-header-title" style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span class="copilot-live-dot" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);"></span>
+                        <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0; letter-spacing: -0.01em;">🤖 Policy & Underwriting Assistant</h2>
                     </div>
-                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 9999px;">
-                        GPT-4o + Azure Search
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.03em;">
+                        GPT-4o &bull; Azure Search
                     </span>
                 </div>
 
                 <!-- Chat Output Box -->
-                <div id="chatHistory" class="copilot-chat-history">
-                    <div class="copilot-bubble-wrapper-assistant">
-                        <span class="copilot-sender-label" style="color: #2563eb;">Apex AI Assistant</span>
-                        <div class="copilot-bubble-assistant">
-                            Hello @Model.CurrentUserName! I can answer questions regarding loan guidelines, maximum DTI/LTV limits, required document types, or closing disclosures under current active policies.
+                <div id="chatHistory" class="copilot-chat-history" style="flex: 1; overflow-y: auto; max-height: 420px; padding: 1.25rem 1.35rem; background: #f8fafc; display: flex; flex-direction: column; gap: 1.25rem; scroll-behavior: smooth;">
+                    <div class="copilot-bubble-wrapper-assistant" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;">
+                        <span class="copilot-sender-label" style="font-size: 0.75rem; font-weight: 700; color: #2563eb; padding: 0 0.35rem;">Apex AI Assistant</span>
+                        <div class="copilot-bubble-assistant" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 1.1rem 1.25rem; border-radius: 18px 18px 18px 4px; font-size: 0.88rem; line-height: 1.6; color: #1e293b; max-width: 94%; box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05); word-break: break-word;">
+                            Hello <strong>@Model.CurrentUserName</strong>! I can answer questions regarding loan guidelines, maximum DTI/LTV limits, required document types, or closing disclosures under current active policies.
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Prompt Chips -->
-                <div class="copilot-prompt-chips">
-                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What is the maximum LTV ratio allowed for mortgages?')">Max LTV Ratio</button>
-                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What is the minimum credit score for personal loans?')">Min Credit Score</button>
-                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What documents are required to prove income?')">Income Verification</button>
-                    <button type="button" class="copilot-prompt-chip" onclick="quickAsk('What are the TRID disclosure timing rules?')">TRID Timing</button>
+                <div class="copilot-prompt-chips" style="display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.6rem 1.25rem; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="copilot-prompt-chip" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 9999px; padding: 0.35rem 0.85rem; font-size: 0.76rem; color: #334155; white-space: nowrap; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);" onclick="quickAsk('What is the maximum LTV ratio allowed for mortgages?')">📊 Max LTV Ratio</button>
+                    <button type="button" class="copilot-prompt-chip" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 9999px; padding: 0.35rem 0.85rem; font-size: 0.76rem; color: #334155; white-space: nowrap; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);" onclick="quickAsk('What is the minimum credit score for personal loans?')">🎯 Min Credit Score</button>
+                    <button type="button" class="copilot-prompt-chip" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 9999px; padding: 0.35rem 0.85rem; font-size: 0.76rem; color: #334155; white-space: nowrap; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);" onclick="quickAsk('What documents are required to prove income?')">📄 Income Verification</button>
+                    <button type="button" class="copilot-prompt-chip" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 9999px; padding: 0.35rem 0.85rem; font-size: 0.76rem; color: #334155; white-space: nowrap; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);" onclick="quickAsk('What are the TRID disclosure timing rules?')">⏱️ TRID Timing</button>
                 </div>
 
                 <!-- Chat Input Area -->
-                <div class="copilot-input-area">
-                    <input type="text" id="streamQuestionInput" class="copilot-input-field" placeholder="Ask policy question (e.g. 'What is the maximum LTV ratio?')" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
-                    <button type="button" id="btnSendStream" class="copilot-send-btn" onclick="sendStreamQuestion()">
-                        Ask AI <span>&rarr;</span>
+                <div class="copilot-input-area" style="padding: 0.85rem 1.25rem; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; gap: 0.65rem; align-items: center;">
+                    <input type="text" id="streamQuestionInput" class="copilot-input-field" style="flex: 1; padding: 0.7rem 1rem; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 0.88rem; color: #0f172a; outline: none; background: #f8fafc;" placeholder="Ask policy question (e.g. 'What is the maximum LTV ratio?')" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
+                    <button type="button" id="btnSendStream" class="copilot-send-btn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; border: none; border-radius: 10px; padding: 0.7rem 1.35rem; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25); white-space: nowrap;" onclick="sendStreamQuestion()">
+                        <span>Ask AI</span> <span style="font-size: 1.05rem; line-height: 1;">&rarr;</span>
                     </button>
                 </div>
             </div>
