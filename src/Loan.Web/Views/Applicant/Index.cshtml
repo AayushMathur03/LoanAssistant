@@ -3,24 +3,28 @@
     ViewData["Title"] = "Applicant Portal";
     ViewData["ActiveNav"] = "Applicant";
     var app = Model.ActiveApplication;
+    var isCatalogueTab = Model.ActiveTab == "catalogue";
 }
 
 <div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
     <!-- Welcome Header Banner -->
-    <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 14px; padding: 1.75rem 2rem; color: white; margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);">
+    <div style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 14px; padding: 1.75rem 2rem; color: white; margin-bottom: 1.5rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <span style="background: rgba(255,255,255,0.2); font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em;">
                     Borrower Workspace
                 </span>
                 <h1 style="font-size: 1.85rem; font-weight: 800; margin: 0.4rem 0 0.2rem 0;">Welcome, @Model.CurrentUserName</h1>
-                <p style="font-size: 0.95rem; opacity: 0.9;">
+                <p style="font-size: 0.95rem; opacity: 0.9; margin: 0;">
                     Applicant ID: <strong>@Model.ApplicantId</strong> &bull; Account: <strong>@Model.CurrentUserEmail</strong>
                 </p>
             </div>
-            <div>
-                <button type="button" class="btn" style="background: white; color: #1e3a8a; font-weight: 700; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="document.getElementById('newAppModal').style.display='block'">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn" style="background: white; color: #1e3a8a; font-weight: 700; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="openNewAppModal('Mortgage')">
                     + New Loan Application
+                </button>
+                <button type="button" class="btn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); font-weight: 600; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal()">
+                    ⚙️ Build Custom Loan
                 </button>
             </div>
         </div>
@@ -40,304 +44,536 @@
         </div>
     }
 
-    <!-- 5-Stage Real Domain Loan Journey Tracker -->
-    @if (app != null)
+    <!-- Task 1: Sub-Navigation Tabs (Browse Catalogue vs. My Applications) -->
+    <div style="display: flex; gap: 1rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 2rem;">
+        <a href="@Url.Action("Index", new { tab = "catalogue" })" 
+           style="padding: 0.75rem 1.5rem; font-weight: 700; font-size: 0.95rem; text-decoration: none; border-bottom: 3px solid @(isCatalogueTab ? "#2563eb" : "transparent"); color: @(isCatalogueTab ? "#2563eb" : "#64748b"); display: flex; align-items: center; gap: 0.5rem;">
+            <span>🛒</span> Product Catalogue & Apply
+        </a>
+        <a href="@Url.Action("Index", new { tab = "applications" })" 
+           style="padding: 0.75rem 1.5rem; font-weight: 700; font-size: 0.95rem; text-decoration: none; border-bottom: 3px solid @(!isCatalogueTab ? "#2563eb" : "transparent"); color: @(!isCatalogueTab ? "#2563eb" : "#64748b"); display: flex; align-items: center; gap: 0.5rem;">
+            <span>📁</span> My Applications
+            <span style="background: @(!isCatalogueTab ? "#2563eb" : "#e2e8f0"); color: @(!isCatalogueTab ? "white" : "#475569"); font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 9999px;">
+                @Model.AllApplications.Count
+            </span>
+        </a>
+    </div>
+
+    @if (isCatalogueTab)
     {
-        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <!-- ========================================================================= -->
+        <!-- TAB 1: PRODUCT CATALOGUE & APPLY (Clean Neutral Starting State)            -->
+        <!-- ========================================================================= -->
+        <div style="margin-bottom: 2.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <div>
-                    <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Loan Application Journey</h2>
-                    <span style="font-size: 0.82rem; color: #64748b;">Current Active Stage: <strong>@Model.JourneyStageTitle</strong></span>
-                </div>
-                <span class="badge" style="font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px; @(app.Status == ApplicationStatus.Approved ? "background: #d1fae5; color: #065f46;" : app.Status == ApplicationStatus.Rejected ? "background: #fee2e2; color: #991b1b;" : "background: #dbeafe; color: #1e40af;")">
-                    Status: @app.Status
-                </span>
-            </div>
-
-            <!-- Stage Progress Bar -->
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; position: relative; margin-top: 1rem;">
-                @{
-                    string[] stageNames = ["1. Submitted", "2. Documents", "3. Eligibility", "4. AI Review", "5. Officer Decision"];
-                    for (int i = 1; i <= 5; i++)
-                    {
-                        bool isCompleted = Model.JourneyStage >= i;
-                        bool isCurrent = Model.JourneyStage == i;
-                        var stageBg = isCompleted ? (isCurrent ? "#2563eb" : "#059669") : "#e2e8f0";
-                        var stageColor = isCompleted ? "white" : "#64748b";
-
-                        <div style="text-align: center;">
-                            <div style="height: 6px; background: @stageBg; border-radius: 3px; margin-bottom: 0.5rem;"></div>
-                            <div style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: @stageBg; color: @stageColor; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.25rem;">
-                                @(isCompleted && !isCurrent ? "✓" : i.ToString())
-                            </div>
-                            <div style="font-size: 0.75rem; font-weight: @(isCurrent ? "700" : "500"); color: @(isCurrent ? "#1e3a8a" : "#475569");">
-                                @stageNames[i - 1]
-                            </div>
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-    }
-
-    <!-- Main Grid: Application Overview & Streaming AI Assistant -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;" class="applicant-grid">
-        <!-- Left Column: Application Details & Missing Evidence -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            @if (app != null)
-            {
-                <!-- Application Summary Card -->
-                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
-                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Application #@app.ApplicationId</h2>
-                        <span style="font-size: 0.8rem; color: #64748b;">Updated: @app.UpdatedAtUtc.ToString("g")</span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-                        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
-                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Product Guide</span>
-                            <strong style="color: #0f172a; font-size: 0.95rem;">@app.ProductRules.ProductName</strong>
-                            <span style="font-size: 0.72rem; color: #2563eb; display: block;">Policy: @app.ProductRules.EffectiveVersion</span>
-                        </div>
-                        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
-                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Requested Loan</span>
-                            <strong style="color: #0f172a; font-size: 0.95rem;">@app.Facts.RequestedLoanAmount</strong>
-                            <span style="font-size: 0.72rem; color: #64748b; display: block;">Est Value: @app.Facts.EstimatedPropertyValue</span>
-                        </div>
-                        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
-                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Effective Monthly Income</span>
-                            <strong style="color: #0f172a; font-size: 0.95rem;">@app.Facts.EffectiveMonthlyIncome</strong>
-                            <span style="font-size: 0.72rem; color: #64748b; display: block;">Debts: @app.Facts.MonthlyDebts</span>
-                        </div>
-                        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
-                            <span style="font-size: 0.75rem; color: #64748b; display: block;">Computed DTI / LTV</span>
-                            <strong style="color: #0f172a; font-size: 0.95rem;">
-                                @(app.Indicators?.DebtToIncomeRatio != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "Evaluating") / 
-                                @(app.Indicators?.LoanToValueRatio != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")
-                            </strong>
-                            <span style="font-size: 0.72rem; color: @(app.Indicators?.IsDtiEligible == true ? "#059669" : "#dc2626"); display: block;">
-                                @(app.Indicators?.IsDtiEligible == true ? "✓ DTI Compliant" : "⚠️ DTI Exceeds Cap")
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Edit Permitted Facts Form -->
-                    <form asp-action="SaveDraft" method="post" style="border-top: 1px solid #f1f5f9; padding-top: 1rem;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="applicationId" value="@app.ApplicationId" />
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.5rem;">Update Requested Amount / Purpose:</span>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <input type="number" name="requestedAmount" class="form-control" value="@app.Facts.RequestedLoanAmount.Amount" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; width: 140px;" step="1000" />
-                            <input type="text" name="loanPurpose" class="form-control" value="@app.Facts.LoanPurpose" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; flex: 1;" placeholder="Loan purpose..." />
-                            <button type="submit" class="btn" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
-                                Save
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Missing Evidence Checklist -->
-                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                    <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">
-                        📑 Required Evidence & Verification Checklist
-                    </h2>
-                    @if (Model.MissingEvidenceItems.Any())
-                    {
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            @foreach (var item in Model.MissingEvidenceItems)
-                            {
-                                <div style="display: flex; align-items: center; gap: 0.75rem; background: #fffbeb; border: 1px solid #fef3c7; padding: 0.6rem 0.85rem; border-radius: 8px; font-size: 0.85rem; color: #92400e;">
-                                    <span style="font-size: 1.1rem; color: #d97706;">⚠️</span>
-                                    <span><strong>Pending:</strong> @item</span>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #065f46;">
-                            ✓ All core evidence and supporting documents verified for this stage.
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2.5rem; text-align: center;">
-                    <h2 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">No Active Loan Application</h2>
-                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Start your lending journey by creating a synthetic loan application.</p>
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('newAppModal').style.display='block'">
-                        + Start Application
-                    </button>
-                </div>
-            }
-        </div>
-
-        <!-- Right Column: Live Streaming AI Assistant -->
-        <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
-                <div>
-                    <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">🤖 Policy & Underwriting AI Assistant</h2>
-                    <span style="font-size: 0.78rem; color: #64748b;">Live Azure OpenAI + Azure AI Search RAG</span>
-                </div>
-                <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px;">
-                    Streaming Active
-                </span>
-            </div>
-
-            <!-- Chat Output Box -->
-            <div id="chatHistory" style="flex: 1; min-height: 260px; max-height: 380px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                <div style="margin-bottom: 1rem;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>
-                    <p style="font-size: 0.88rem; color: #334155; line-height: 1.5; margin: 0;">
-                        Hello @Model.CurrentUserName! I can answer questions regarding loan guidelines, maximum DTI/LTV limits, required document types, or closing disclosures under current active policies.
+                    <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem 0;">Explore Available Loan Products</h2>
+                    <p style="color: #64748b; font-size: 0.92rem; margin: 0;">
+                        Review published policy criteria, interest rates, and evidence requirements before submitting an application.
                     </p>
                 </div>
-            </div>
-
-            <!-- Chat Input Area -->
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="streamQuestionInput" class="form-control" placeholder="Ask e.g. 'What is the maximum LTV ratio allowed?'" style="padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
-                <button type="button" id="btnSendStream" class="btn" style="background: #2563eb; color: white; border: none; border-radius: 8px; padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.88rem; cursor: pointer;" onclick="sendStreamQuestion()">
-                    Ask AI
+                <button type="button" class="btn btn-outline-primary" style="font-weight: 700; font-size: 0.88rem; padding: 0.5rem 1rem; border: 1.5px solid #2563eb; color: #2563eb; background: white; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal()">
+                    + Need Custom Terms? Build Custom Loan
                 </button>
             </div>
 
-            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem; line-height: 1.4;">
-                <strong>Disclaimer:</strong> Explanations are informational and do NOT constitute a loan commitment, rate lock, or pre-approval decision per Fair Lending regulations.
+            <!-- Product Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Product 1: Standard Mortgage -->
+                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <span style="font-size: 1.75rem;">🏠</span>
+                            <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 6px;">
+                                Policy: MORTGAGE-STD v1.2
+                            </span>
+                        </div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0;">Standard Residential Mortgage</h3>
+                        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.25rem;">
+                            Fixed-rate financing for primary residence purchases. Fully compliant with TRID and RESPA Section 8.1 disclosure rules.
+                        </p>
+
+                        <div style="background: #f8fafc; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; font-size: 0.82rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                            <div><span style="color: #64748b; display: block;">Starting APR</span><strong style="color: #0f172a; font-size: 0.95rem;">6.50%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max Loan Cap</span><strong style="color: #0f172a; font-size: 0.95rem;">$750,000</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max DTI Ratio</span><strong style="color: #0f172a;">43.0%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max LTV Ratio</span><strong style="color: #0f172a;">80.0%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Credit Score</span><strong style="color: #0f172a;">640</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Income</span><strong style="color: #0f172a;">$3,000/mo</strong></div>
+                        </div>
+
+                        <div style="font-size: 0.78rem; color: #475569; margin-bottom: 1.25rem;">
+                            <strong>Required Evidence:</strong> 30-Day Paystub, 60-Day Bank Statement, Photo ID, Property Appraisal.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn" style="flex: 1; background: #2563eb; color: white; font-weight: 700; font-size: 0.85rem; padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer;" onclick="openNewAppModal('Mortgage')">
+                            Apply for Mortgage
+                        </button>
+                        <button type="button" class="btn" style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 0.85rem; padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal('Mortgage', 350000, 360)">
+                            Customize
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 2: Personal Loan -->
+                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <span style="font-size: 1.75rem;">💳</span>
+                            <span class="badge" style="background: #f0fdf4; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 6px;">
+                                Policy: LOAN-PERSONAL v2.0
+                            </span>
+                        </div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0;">Unsecured Personal Loan</h3>
+                        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.25rem;">
+                            Flexible financing for debt consolidation, major purchases, or home improvements. No collateral required.
+                        </p>
+
+                        <div style="background: #f8fafc; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; font-size: 0.82rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                            <div><span style="color: #64748b; display: block;">Starting APR</span><strong style="color: #0f172a; font-size: 0.95rem;">9.25%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max Loan Cap</span><strong style="color: #0f172a; font-size: 0.95rem;">$75,000</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max DTI Ratio</span><strong style="color: #0f172a;">38.0%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max Term</span><strong style="color: #0f172a;">72 Months</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Credit Score</span><strong style="color: #0f172a;">600</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Income</span><strong style="color: #0f172a;">$2,500/mo</strong></div>
+                        </div>
+
+                        <div style="font-size: 0.78rem; color: #475569; margin-bottom: 1.25rem;">
+                            <strong>Required Evidence:</strong> Recent Paystub or W-2, Government Photo ID. No property valuation.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn" style="flex: 1; background: #059669; color: white; font-weight: 700; font-size: 0.85rem; padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer;" onclick="openNewAppModal('PersonalLoan')">
+                            Apply for Personal Loan
+                        </button>
+                        <button type="button" class="btn" style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 0.85rem; padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal('PersonalLoan', 25000, 60)">
+                            Customize
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 3: Auto Loan -->
+                <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                            <span style="font-size: 1.75rem;">🚗</span>
+                            <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.55rem; border-radius: 6px;">
+                                Policy: LOAN-AUTO v1.1
+                            </span>
+                        </div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0;">Vehicle Auto Loan</h3>
+                        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1.25rem;">
+                            New or certified pre-owned passenger vehicle purchase financing with competitive dealer rates.
+                        </p>
+
+                        <div style="background: #f8fafc; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; font-size: 0.82rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                            <div><span style="color: #64748b; display: block;">Starting APR</span><strong style="color: #0f172a; font-size: 0.95rem;">5.75%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max Loan Cap</span><strong style="color: #0f172a; font-size: 0.95rem;">$60,000</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max DTI Ratio</span><strong style="color: #0f172a;">45.0%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Max LTV Ratio</span><strong style="color: #0f172a;">90.0%</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Credit Score</span><strong style="color: #0f172a;">620</strong></div>
+                            <div><span style="color: #64748b; display: block;">Min Income</span><strong style="color: #0f172a;">$2,000/mo</strong></div>
+                        </div>
+
+                        <div style="font-size: 0.78rem; color: #475569; margin-bottom: 1.25rem;">
+                            <strong>Required Evidence:</strong> Paystub, Government Photo ID, Vehicle Purchase Order & Valuation.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn" style="flex: 1; background: #d97706; color: white; font-weight: 700; font-size: 0.85rem; padding: 0.6rem; border: none; border-radius: 8px; cursor: pointer;" onclick="openNewAppModal('AutoLoan')">
+                            Apply for Auto Loan
+                        </button>
+                        <button type="button" class="btn" style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 0.85rem; padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal('AutoLoan', 35000, 60)">
+                            Customize
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task 9: Callout Banner for Custom Loans -->
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1.05rem; font-weight: 700; color: #0f172a;">Need a tailored loan amount or specific repayment term?</h4>
+                    <p style="margin: 0; color: #64748b; font-size: 0.88rem;">
+                        Build a custom loan specification with your exact terms. Our deterministic engine maps it to the closest policy guide for human review.
+                    </p>
+                </div>
+                <button type="button" class="btn" style="background: #0f172a; color: white; font-weight: 700; font-size: 0.88rem; padding: 0.65rem 1.25rem; border-radius: 8px; cursor: pointer;" onclick="openCustomLoanModal()">
+                    ⚙️ Build Custom Loan Request
+                </button>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- ========================================================================= -->
+        <!-- TAB 2: MY APPLICATIONS (In-Progress Journey, Facts, Documents, AI Chat)     -->
+        <!-- ========================================================================= -->
 
-    <!-- Document Upload, Storage & Extraction Section -->
-    <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">
-                    📂 Document Intake, Private Blob Storage & Extraction
-                </h2>
-                <span style="font-size: 0.82rem; color: #64748b;">
-                    Upload synthetic paystubs, W-2s, tax returns, bank statements, or photo IDs. High-confidence facts are auto-accepted.
-                </span>
+        @if (Model.AllApplications.Any())
+        {
+            <!-- Multi-Application Switcher Pills -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
+                <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; align-self: center; margin-right: 0.5rem;">Applications:</span>
+                @foreach (var candidate in Model.AllApplications)
+                {
+                    bool isSelected = app != null && app.ApplicationId == candidate.ApplicationId;
+                    <a href="@Url.Action("Index", new { tab = "applications", applicationId = candidate.ApplicationId })"
+                       style="padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; @(isSelected ? "background: #1e3a8a; color: white;" : "background: white; border: 1px solid #cbd5e1; color: #334155;")">
+                        <span>#@candidate.ApplicationId</span>
+                        <span style="font-size: 0.72rem; opacity: 0.9;">(@candidate.ProductRules.ProductName)</span>
+                        <span style="font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; @(candidate.Status == ApplicationStatus.Approved ? "background: #059669; color: white;" : candidate.Status == ApplicationStatus.InformationRequested ? "background: #d97706; color: white;" : "background: #3b82f6; color: white;")">
+                            @candidate.Status
+                        </span>
+                    </a>
+                }
             </div>
-            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
-                Storage: Azure Blob (Private)
-            </span>
+        }
+
+        @if (app != null)
+        {
+            @if (app.Status == ApplicationStatus.InformationRequested)
+            {
+                <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1); display: flex; align-items: flex-start; gap: 1rem;">
+                    <span style="font-size: 1.8rem; line-height: 1;">⚠️</span>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #92400e; margin: 0;">Action Required: Missing Evidence or Field Confirmation Needed</h3>
+                            <span class="badge" style="background: #d97706; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px;">Status: InformationRequested</span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: #b45309; margin: 0 0 0.75rem 0; line-height: 1.45;">
+                            Underwriting policy requirements or our review team flagged items that require your action before this application can proceed to formal review. Please upload the missing document(s) or confirm any low-confidence OCR fields below.
+                        </p>
+                        @if (Model.MissingEvidenceItems.Any())
+                        {
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                @foreach (var missing in Model.MissingEvidenceItems)
+                                {
+                                    <span style="background: white; border: 1px solid #fcd34d; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 0.3rem 0.7rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                        📌 @missing
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- 5-Stage Real Domain Loan Journey Tracker -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <div>
+                        <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Loan Application Journey</h2>
+                        <span style="font-size: 0.82rem; color: #64748b;">Current Active Stage: <strong>@Model.JourneyStageTitle</strong></span>
+                    </div>
+                    <span class="badge" style="font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px; @(app.Status == ApplicationStatus.Approved ? "background: #d1fae5; color: #065f46;" : app.Status == ApplicationStatus.Rejected ? "background: #fee2e2; color: #991b1b;" : app.Status == ApplicationStatus.InformationRequested ? "background: #fef3c7; color: #92400e;" : "background: #dbeafe; color: #1e40af;")">
+                        Status: @app.Status
+                    </span>
+                </div>
+
+                <!-- Stage Progress Bar -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; position: relative; margin-top: 1rem;">
+                    @{
+                        string[] stageNames = ["1. Submitted", "2. Documents", "3. Eligibility", "4. AI Review", "5. Officer Decision"];
+                        for (int i = 1; i <= 5; i++)
+                        {
+                            bool isCompleted = Model.JourneyStage >= i;
+                            bool isCurrent = Model.JourneyStage == i;
+                            var stageBg = isCompleted ? (isCurrent ? "#2563eb" : "#059669") : "#e2e8f0";
+                            var stageColor = isCompleted ? "white" : "#64748b";
+
+                            <div style="text-align: center;">
+                                <div style="height: 6px; background: @stageBg; border-radius: 3px; margin-bottom: 0.5rem;"></div>
+                                <div style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: @stageBg; color: @stageColor; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.25rem;">
+                                    @(isCompleted && !isCurrent ? "✓" : i.ToString())
+                                </div>
+                                <div style="font-size: 0.75rem; font-weight: @(isCurrent ? "700" : "500"); color: @(isCurrent ? "#1e3a8a" : "#475569");">
+                                    @stageNames[i - 1]
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Main Grid: Application Details & Streaming AI Assistant -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;" class="applicant-grid">
+            <!-- Left Column: Application Summary & Evidence Checklist -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                @if (app != null)
+                {
+                    <!-- Application Summary Card -->
+                    <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+                            <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">Application #@app.ApplicationId</h2>
+                            <span style="font-size: 0.8rem; color: #64748b;">Updated: @app.UpdatedAtUtc.ToString("g")</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                            <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Product Guide</span>
+                                <strong style="color: #0f172a; font-size: 0.95rem;">@app.ProductRules.ProductName</strong>
+                                <span style="font-size: 0.72rem; color: #2563eb; display: block;">Policy: @app.ProductRules.EffectiveVersion</span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Requested Loan</span>
+                                <strong style="color: #0f172a; font-size: 0.95rem;">@app.Facts.RequestedLoanAmount</strong>
+                                <span style="font-size: 0.72rem; color: #64748b; display: block;">Est Value: @app.Facts.EstimatedPropertyValue</span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Effective Monthly Income</span>
+                                <strong style="color: #0f172a; font-size: 0.95rem;">@app.Facts.EffectiveMonthlyIncome</strong>
+                                <span style="font-size: 0.72rem; color: #64748b; display: block;">Debts: @app.Facts.MonthlyDebts</span>
+                            </div>
+                            <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Computed DTI / LTV</span>
+                                <strong style="color: #0f172a; font-size: 0.95rem;">
+                                    @(app.Indicators?.DebtToIncomeRatio != null ? $"{app.Indicators.DebtToIncomeRatio:P1}" : "Evaluating") / 
+                                    @(app.Indicators?.LoanToValueRatio != null ? $"{app.Indicators.LoanToValueRatio:P1}" : "N/A")
+                                </strong>
+                                <span style="font-size: 0.72rem; color: @(app.Indicators?.IsDtiEligible == true ? "#059669" : "#dc2626"); display: block;">
+                                    @(app.Indicators?.IsDtiEligible == true ? "✓ DTI Compliant" : "⚠️ DTI Exceeds Cap")
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Edit Permitted Facts Form -->
+                        <form asp-action="SaveDraft" method="post" style="border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="applicationId" value="@app.ApplicationId" />
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.5rem;">Update Requested Amount / Purpose:</span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="number" name="requestedAmount" class="form-control" value="@app.Facts.RequestedLoanAmount.Amount" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; width: 140px;" step="1000" />
+                                <input type="text" name="loanPurpose" class="form-control" value="@app.Facts.LoanPurpose" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; flex: 1;" placeholder="Loan purpose..." />
+                                <button type="submit" class="btn" style="background: #2563eb; color: white; border: none; border-radius: 6px; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Missing Evidence Checklist -->
+                    <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">
+                            📑 Required Evidence & Verification Checklist
+                        </h2>
+                        @if (Model.MissingEvidenceItems.Any())
+                        {
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                @foreach (var item in Model.MissingEvidenceItems)
+                                {
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; background: #fffbeb; border: 1px solid #fef3c7; padding: 0.6rem 0.85rem; border-radius: 8px; font-size: 0.85rem; color: #92400e;">
+                                        <span style="font-size: 1.1rem; color: #d97706;">⚠️</span>
+                                        <span><strong>Pending Evidence:</strong> @item</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #065f46;">
+                                ✓ All core evidence and supporting documents verified for this stage.
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2.5rem; text-align: center;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">No Active Loan Application</h2>
+                        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Browse our product catalogue to select a loan product or configure custom terms.</p>
+                        <a href="@Url.Action("Index", new { tab = "catalogue" })" class="btn" style="background: #2563eb; color: white; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; text-decoration: none;">
+                            Browse Catalogue & Apply
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column: Live Streaming AI Assistant -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+                    <div>
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0;">🤖 Policy & Underwriting AI Assistant</h2>
+                        <span style="font-size: 0.78rem; color: #64748b;">Live Azure OpenAI + Azure AI Search RAG</span>
+                    </div>
+                    <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                        Streaming Active
+                    </span>
+                </div>
+
+                <!-- Chat Output Box -->
+                <div id="chatHistory" style="flex: 1; min-height: 260px; max-height: 380px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>
+                        <p style="font-size: 0.88rem; color: #334155; line-height: 1.5; margin: 0;">
+                            Hello @Model.CurrentUserName! I can answer questions regarding loan guidelines, maximum DTI/LTV limits, required document types, or closing disclosures under current active policies.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="streamQuestionInput" class="form-control" placeholder="Ask e.g. 'What is the maximum LTV ratio allowed?'" style="padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; flex: 1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
+                    <button type="button" id="btnSendStream" class="btn" style="background: #2563eb; color: white; border: none; border-radius: 8px; padding: 0.6rem 1.25rem; font-weight: 600; font-size: 0.88rem; cursor: pointer;" onclick="sendStreamQuestion()">
+                        Ask AI
+                    </button>
+                </div>
+
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem; line-height: 1.4;">
+                    <strong>Disclaimer:</strong> Explanations are informational and do NOT constitute a loan commitment, rate lock, or pre-approval decision per Fair Lending regulations.
+                </div>
+            </div>
         </div>
 
         @if (app != null)
         {
-            <!-- Upload Form -->
-            <form asp-action="UploadDocument" method="post" enctype="multipart/form-data" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="applicationId" value="@app.ApplicationId" />
-                <div style="margin-bottom: 0.75rem;">
-                    <label for="docFileInput" style="cursor: pointer;">
-                        <div style="font-size: 2rem; margin-bottom: 0.25rem;">📄</div>
-                        <span style="font-weight: 600; color: #1e293b; font-size: 0.95rem; display: block;">Select synthetic document to upload</span>
-                        <span style="font-size: 0.78rem; color: #64748b;">Supported: Paystub, W-2, Bank Statement, Driver License, Tax Return (.txt, .pdf, .png)</span>
-                    </label>
-                    <input type="file" id="docFileInput" name="document" style="margin-top: 0.5rem; display: inline-block;" required />
+            <!-- Document Intake & Extraction Section with Sample Document Quick-Picker -->
+            <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0;">
+                            📂 Document Intake, Private Storage & Fact Extraction
+                        </h2>
+                        <span style="font-size: 0.82rem; color: #64748b;">
+                            Upload candidate documents or choose a synthetic demo document to extract fields and confidence scores.
+                        </span>
+                    </div>
+                    <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                        Storage: Azure Blob (Private with Fallback)
+                    </span>
                 </div>
-                <button type="submit" class="btn" style="background: #059669; color: white; border: none; padding: 0.55rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer;">
-                    Upload & Extract Fields
-                </button>
-            </form>
 
-            <!-- Extracted Documents Table -->
-            @if (app.Documents.Any())
-            {
-                <h3 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">Uploaded Document Records & Fact Confidence:</h3>
-                <div style="overflow-x: auto;">
-                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                        <thead>
-                            <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0; text-align: left;">
-                                <th style="padding: 0.6rem 0.75rem;">Document</th>
-                                <th style="padding: 0.6rem 0.75rem;">Type</th>
-                                <th style="padding: 0.6rem 0.75rem;">Extracted Facts</th>
-                                <th style="padding: 0.6rem 0.75rem;">Confidence</th>
-                                <th style="padding: 0.6rem 0.75rem;">Status</th>
-                                <th style="padding: 0.6rem 0.75rem;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var doc in app.Documents)
-                            {
-                                <tr style="border-bottom: 1px solid #e2e8f0;">
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        <strong>@doc.FileName</strong>
-                                        <span style="display: block; font-size: 0.72rem; color: #64748b;">Ref: @doc.StorageReference</span>
-                                    </td>
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        <span class="badge badge-info" style="font-size: 0.75rem;">@doc.DocumentType</span>
-                                    </td>
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        @foreach (var f in doc.Fields.Take(3))
-                                        {
-                                            <div style="margin-bottom: 0.2rem;">
-                                                <span style="color: #475569;">@f.FieldName:</span> <strong>@f.DisplayValue</strong>
-                                            </div>
-                                        }
-                                    </td>
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        @{
-                                            var avgConf = doc.Fields.Any() ? doc.Fields.Average(f => f.ConfidenceScore) : 1.0f;
-                                            var confPercent = (int)(avgConf * 100);
-                                        }
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <div style="width: 70px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
-                                                <div style="width: @confPercent%; height: 100%; background: @(confPercent >= 85 ? "#059669" : "#d97706");"></div>
-                                            </div>
-                                            <span style="font-size: 0.75rem; font-weight: 700; color: @(confPercent >= 85 ? "#059669" : "#d97706");">@confPercent%</span>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        <span class="badge @(doc.Status == Loan.Domain.Documents.ExtractionStatus.Extracted || doc.Status == Loan.Domain.Documents.ExtractionStatus.Confirmed ? "badge-success" : "badge-warning")" style="font-size: 0.72rem;">
-                                            @doc.Status
-                                        </span>
-                                    </td>
-                                    <td style="padding: 0.6rem 0.75rem;">
-                                        @{
-                                            var unconfirmed = doc.Fields.FirstOrDefault(f => f.NeedsConfirmation && f.Status == Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed);
-                                        }
-                                        @if (unconfirmed != null)
-                                        {
-                                            <form asp-action="ConfirmField" method="post" style="display: inline;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="applicationId" value="@app.ApplicationId" />
-                                                <input type="hidden" name="documentId" value="@doc.DocumentId" />
-                                                <input type="hidden" name="fieldName" value="@unconfirmed.FieldName" />
-                                                <input type="hidden" name="confirmedValue" value="@unconfirmed.DisplayValue" />
-                                                <input type="hidden" name="reason" value="Confirmed by Applicant via Portal" />
-                                                <button type="submit" class="btn" style="background: #f59e0b; color: white; border: none; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                                                    Confirm @unconfirmed.FieldName
-                                                </button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">✓ Facts Accepted</span>
-                                        }
-                                    </td>
+                <!-- Upload Form with 1-Click Synthetic Sample Document Quick-Picker -->
+                <form asp-action="UploadDocument" method="post" enctype="multipart/form-data" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="applicationId" value="@app.ApplicationId" />
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center;">
+                        <!-- Option A: Browse file from disk -->
+                        <div style="text-align: center; border-right: 1px solid #e2e8f0; padding-right: 1rem;">
+                            <label for="docFileInput" style="cursor: pointer;">
+                                <div style="font-size: 1.75rem; margin-bottom: 0.25rem;">📄</div>
+                                <span style="font-weight: 600; color: #1e293b; font-size: 0.88rem; display: block;">Upload from Computer</span>
+                                <span style="font-size: 0.75rem; color: #64748b;">Paystub, W-2, Bank Statement, ID (.txt, .pdf)</span>
+                            </label>
+                            <input type="file" id="docFileInput" name="document" style="margin-top: 0.5rem; font-size: 0.8rem;" />
+                        </div>
+
+                        <!-- Option B: Select pre-packaged synthetic document -->
+                        <div>
+                            <span style="font-weight: 700; color: #1e293b; font-size: 0.88rem; display: block; margin-bottom: 0.25rem;">
+                                ⚡ Or Load Synthetic Demo Document:
+                            </span>
+                            <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.5rem;">
+                                Instant demonstration fixtures with calibrated confidence scores:
+                            </span>
+                            <select name="sampleDocumentName" class="form-control" style="width: 100%; padding: 0.45rem 0.65rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.82rem; margin-bottom: 0.75rem;">
+                                <option value="">-- Choose Sample Document --</option>
+                                <option value="Alice_Cooper_Paystub_Verified.txt">Alice Cooper - Paystub (High Confidence 96% - $12,000/mo)</option>
+                                <option value="Alice_Cooper_BankStatement_60Day.txt">Alice Cooper - 60-Day Bank Statement ($85,000 Reserve)</option>
+                                <option value="Alice_Cooper_DriverLicense_Masked.txt">Alice Cooper - Photo ID (Masked SSN ***-**-6789)</option>
+                                <option value="LowConfidence_Smudged_Paystub.txt">⚠️ Low-Confidence Smudged Paystub (Triggers 72% Alert & Confirmation)</option>
+                                <option value="Jane_Smith_BankStatement_60Day.txt">Jane Smith - Bank Statement (Clears Missing Evidence)</option>
+                                <option value="Adversarial_Prompt_Injection_Document.txt">🛑 Adversarial Prompt Injection Test (Security Guardrail Intercept)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                        <button type="submit" class="btn" style="background: #059669; color: white; border: none; padding: 0.55rem 1.75rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                            Upload & Extract Facts
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Extracted Documents Table -->
+                @if (app.Documents.Any())
+                {
+                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem;">Uploaded Document Records & Fact Confidence:</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background: #f1f5f9; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                                    <th style="padding: 0.6rem 0.75rem;">Document</th>
+                                    <th style="padding: 0.6rem 0.75rem;">Type</th>
+                                    <th style="padding: 0.6rem 0.75rem;">Extracted Facts</th>
+                                    <th style="padding: 0.6rem 0.75rem;">Confidence</th>
+                                    <th style="padding: 0.6rem 0.75rem;">Status</th>
+                                    <th style="padding: 0.6rem 0.75rem;">Action</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <p style="text-align: center; color: #64748b; font-size: 0.88rem; padding: 1rem;">No documents uploaded yet for this application.</p>
-            }
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in app.Documents)
+                                {
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            <strong>@doc.FileName</strong>
+                                            <span style="display: block; font-size: 0.72rem; color: #64748b;">Ref: @doc.StorageReference</span>
+                                        </td>
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            <span class="badge" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                                                @doc.DocumentType
+                                            </span>
+                                        </td>
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            @foreach (var f in doc.Fields.Take(3))
+                                            {
+                                                <div style="margin-bottom: 0.2rem;">
+                                                    <span style="color: #475569;">@f.FieldName:</span> <strong>@f.DisplayValue</strong>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            @{
+                                                var avgConf = doc.Fields.Any() ? doc.Fields.Average(f => f.ConfidenceScore) : 1.0f;
+                                                var confPercent = (int)(avgConf * 100);
+                                                var isHighConf = confPercent >= 85;
+                                            }
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <div style="width: 70px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                                                    <div style="width: @confPercent%; height: 100%; background: @(isHighConf ? "#059669" : "#d97706");"></div>
+                                                </div>
+                                                <span style="font-size: 0.75rem; font-weight: 700; color: @(isHighConf ? "#059669" : "#d97706");">@confPercent%</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            <span class="badge" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: @(doc.Fields.All(f => !f.NeedsConfirmation) ? "#d1fae5" : "#fef3c7"); color: @(doc.Fields.All(f => !f.NeedsConfirmation) ? "#065f46" : "#92400e");">
+                                                @(doc.Fields.All(f => !f.NeedsConfirmation) ? "✓ Confirmed" : "Needs Review")
+                                            </span>
+                                        </td>
+                                        <td style="padding: 0.6rem 0.75rem;">
+                                            @{
+                                                var unconfirmed = doc.Fields.FirstOrDefault(f => f.NeedsConfirmation && f.Status == Loan.Domain.Documents.FieldConfirmationStatus.Unconfirmed);
+                                            }
+                                            @if (unconfirmed != null)
+                                            {
+                                                <button type="button" class="btn" style="background: #f59e0b; color: white; border: none; font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 6px; cursor: pointer; font-weight: 700;" onclick="openConfirmModal('@app.ApplicationId', '@doc.DocumentId', '@unconfirmed.FieldName', '@unconfirmed.DisplayValue')">
+                                                    ⚠️ Confirm @unconfirmed.FieldName
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">✓ Accepted</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
         }
-    </div>
+    }
 </div>
 
-<!-- Modal: Create New Loan Application -->
+<!-- Modal 1: Create New Application from Catalogue -->
 <div id="newAppModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
     <div style="background: white; max-width: 520px; margin: 5% auto; padding: 2rem; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-            <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Create New Loan Application</h2>
+            <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Apply for Loan Product</h2>
             <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;" onclick="document.getElementById('newAppModal').style.display='none'">&times;</button>
         </div>
 
@@ -346,50 +582,45 @@
 
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Select Loan Product</label>
-                <select name="ProductType" class="form-control" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <select id="modalProductType" name="ProductType" class="form-control" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <option value="Mortgage">Standard Residential Mortgage (v1.2 - Max $750,000, Max DTI 43%)</option>
-                    <option value="PersonalLoan">Unsecured Personal Loan (v2.0 - Max $75,000, Max DTI 38%)</option>
+                    <option value="PersonalLoan">Consumer Personal Loan (v2.0 - Max $75,000, Max DTI 38%)</option>
+                    <option value="AutoLoan">Vehicle Auto Loan (v1.1 - Max $60,000, Max DTI 45%)</option>
                 </select>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Requested Loan Amount ($)</label>
-                    <input type="number" name="RequestedAmount" class="form-control" value="350000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" step="1000" required />
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Requested Amount ($)</label>
+                    <input type="number" id="modalRequestedAmount" name="RequestedAmount" class="form-control" value="350000" step="1000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estimated Property Value ($)</label>
-                    <input type="number" name="EstimatedPropertyValue" class="form-control" value="500000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" step="1000" required />
+                    <input type="number" id="modalPropertyValue" name="EstimatedPropertyValue" class="form-control" value="500000" step="1000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" />
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Stated Monthly Gross Income ($)</label>
-                    <input type="number" name="MonthlyGrossIncome" class="form-control" value="12000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" step="100" required />
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Monthly Gross Income ($)</label>
+                    <input type="number" name="MonthlyGrossIncome" class="form-control" value="12000" step="100" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Monthly Debts ($)</label>
-                    <input type="number" name="MonthlyDebts" class="form-control" value="3000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" step="100" required />
+                    <input type="number" name="MonthlyDebts" class="form-control" value="3000" step="100" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-                <div>
-                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Credit Score</label>
-                    <input type="number" name="CreditScore" class="form-control" value="750" min="300" max="850" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Loan Purpose</label>
-                    <input type="text" name="LoanPurpose" class="form-control" value="Primary Residence Purchase" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
-                </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Loan Purpose</label>
+                <input type="text" id="modalLoanPurpose" name="LoanPurpose" class="form-control" value="Primary Residence Purchase" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" class="btn" style="padding: 0.55rem 1rem; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer;" onclick="document.getElementById('newAppModal').style.display='none'">
+                <button type="button" class="btn btn-secondary" style="background: #e2e8f0; color: #334155; border: none; padding: 0.6rem 1.25rem; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="document.getElementById('newAppModal').style.display='none'">
                     Cancel
                 </button>
-                <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.25rem; border: none; border-radius: 6px; background: #2563eb; color: white; font-weight: 600; cursor: pointer;">
+                <button type="submit" class="btn btn-primary" style="background: #2563eb; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
                     Submit Application
                 </button>
             </div>
@@ -397,92 +628,242 @@
     </div>
 </div>
 
-@section Scripts {
+<!-- Modal 2: Task 9 - Build Custom Loan Request -->
+<div id="customLoanModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div style="background: white; max-width: 550px; margin: 5% auto; padding: 2rem; border-radius: 14px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">⚙️ Custom Loan Specification</h2>
+                <span style="font-size: 0.8rem; color: #64748b;">Specify your exact terms to evaluate against our underwriting rules.</span>
+            </div>
+            <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;" onclick="document.getElementById('customLoanModal').style.display='none'">&times;</button>
+        </div>
+
+        <form asp-action="CreateApplication" method="post">
+            @Html.AntiForgeryToken()
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Closest Product Category</label>
+                <select id="customProductType" name="ProductType" class="form-control" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="Mortgage">Residential Property Purchase / Refinance</option>
+                    <option value="PersonalLoan">Unsecured Personal / Major Purchase</option>
+                    <option value="AutoLoan">Vehicle / Passenger Transportation</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Desired Loan Amount ($)</label>
+                    <input type="number" id="customRequestedAmount" name="RequestedAmount" class="form-control" value="150000" step="1000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Desired Term (Months)</label>
+                    <select name="TermMonths" class="form-control" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <option value="36">36 Months (3 Years)</option>
+                        <option value="60">60 Months (5 Years)</option>
+                        <option value="120">120 Months (10 Years)</option>
+                        <option value="180">180 Months (15 Years)</option>
+                        <option value="360" selected>360 Months (30 Years)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Stated Monthly Gross Income ($)</label>
+                    <input type="number" name="MonthlyGrossIncome" class="form-control" value="12000" step="100" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Stated Monthly Debt Payments ($)</label>
+                    <input type="number" name="MonthlyDebts" class="form-control" value="3000" step="100" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estimated Property / Collateral Value ($)</label>
+                <input type="number" name="EstimatedPropertyValue" class="form-control" value="250000" step="1000" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Specific Purpose or Project Description</label>
+                <input type="text" name="LoanPurpose" class="form-control" value="Custom Solar & Property Renovation" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" class="btn btn-secondary" style="background: #e2e8f0; color: #334155; border: none; padding: 0.6rem 1.25rem; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="document.getElementById('customLoanModal').style.display='none'">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" style="background: #0f172a; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
+                    Submit Custom Specification
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 3: Confirm Extracted Field -->
+<div id="confirmFieldModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <div style="background: white; max-width: 460px; margin: 8% auto; padding: 1.75rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 0.5rem 0;">⚠️ Confirm Extracted Fact</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
+            Optical scan confidence was below 85%. Please confirm or correct the value to update effective underwriting facts:
+        </p>
+
+        <form asp-action="ConfirmField" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="modalConfirmAppId" name="applicationId" value="" />
+            <input type="hidden" id="modalConfirmDocId" name="documentId" value="" />
+            <input type="hidden" id="modalConfirmFieldName" name="fieldName" value="" />
+
+            <div style="margin-bottom: 1rem;">
+                <label id="lblFieldName" style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Field Value</label>
+                <input type="text" id="txtConfirmedValue" name="confirmedValue" class="form-control" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 700;" required />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Confirmation Reason</label>
+                <input type="text" name="reason" class="form-control" value="Verified from original statement by applicant" style="width: 100%; padding: 0.55rem; border: 1px solid #cbd5e1; border-radius: 6px;" required />
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" class="btn" style="background: #e2e8f0; color: #334155; border: none; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="document.getElementById('confirmFieldModal').style.display='none'">
+                    Cancel
+                </button>
+                <button type="submit" class="btn" style="background: #059669; color: white; border: none; padding: 0.55rem 1.25rem; border-radius: 6px; font-weight: 700; cursor: pointer;">
+                    Confirm Fact
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function openNewAppModal(productType) {
+        document.getElementById('modalProductType').value = productType;
+        if (productType === 'Mortgage') {
+            document.getElementById('modalRequestedAmount').value = 350000;
+            document.getElementById('modalPropertyValue').value = 500000;
+            document.getElementById('modalLoanPurpose').value = 'Primary Residence Purchase';
+        } else if (productType === 'PersonalLoan') {
+            document.getElementById('modalRequestedAmount').value = 25000;
+            document.getElementById('modalPropertyValue').value = 0;
+            document.getElementById('modalLoanPurpose').value = 'Debt Consolidation';
+        } else if (productType === 'AutoLoan') {
+            document.getElementById('modalRequestedAmount').value = 35000;
+            document.getElementById('modalPropertyValue').value = 40000;
+            document.getElementById('modalLoanPurpose').value = 'New Vehicle Purchase';
+        }
+        document.getElementById('newAppModal').style.display = 'block';
+    }
+
+    function openCustomLoanModal(productType, amount, term) {
+        if (productType) document.getElementById('customProductType').value = productType;
+        if (amount) document.getElementById('customRequestedAmount').value = amount;
+        document.getElementById('customLoanModal').style.display = 'block';
+    }
+
+    function openConfirmModal(appId, docId, fieldName, currentValue) {
+        document.getElementById('modalConfirmAppId').value = appId;
+        document.getElementById('modalConfirmDocId').value = docId;
+        document.getElementById('modalConfirmFieldName').value = fieldName;
+        document.getElementById('lblFieldName').innerText = 'Confirmed Value for ' + fieldName;
+        document.getElementById('txtConfirmedValue').value = currentValue;
+        document.getElementById('confirmFieldModal').style.display = 'block';
+    }
+
     async function sendStreamQuestion() {
         const input = document.getElementById('streamQuestionInput');
         const question = input.value.trim();
         if (!question) return;
 
         const chatHistory = document.getElementById('chatHistory');
-        const btnSend = document.getElementById('btnSendStream');
+        const btn = document.getElementById('btnSendStream');
 
         // Append user bubble
         const userDiv = document.createElement('div');
-        userDiv.style.marginBottom = '0.75rem';
+        userDiv.style.marginBottom = '1rem';
         userDiv.style.textAlign = 'right';
         userDiv.innerHTML = `
-            <span style="font-size: 0.75rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.2rem;">You</span>
-            <div style="display: inline-block; background: #2563eb; color: white; padding: 0.5rem 0.85rem; border-radius: 8px; font-size: 0.88rem; text-align: left; max-width: 85%;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 0.25rem;">You</span>
+            <div style="display: inline-block; background: #2563eb; color: white; padding: 0.6rem 0.9rem; border-radius: 12px 12px 0 12px; font-size: 0.88rem; max-width: 80%; text-align: left;">
                 ${escapeHtml(question)}
             </div>
         `;
         chatHistory.appendChild(userDiv);
         input.value = '';
-        btnSend.disabled = true;
-        btnSend.innerText = 'Streaming...';
+        btn.disabled = true;
 
-        // Append AI response container
-        const aiDiv = document.createElement('div');
-        aiDiv.style.marginBottom = '1rem';
-        const aiContentSpan = document.createElement('span');
-        aiContentSpan.style.fontSize = '0.88rem';
-        aiContentSpan.style.color = '#1e293b';
-        aiContentSpan.style.lineHeight = '1.5';
-        aiContentSpan.innerText = '';
-
-        aiDiv.innerHTML = `<span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>`;
-        aiDiv.appendChild(aiContentSpan);
-        chatHistory.appendChild(aiDiv);
+        // Create Assistant bubble
+        const assistantDiv = document.createElement('div');
+        assistantDiv.style.marginBottom = '1rem';
+        assistantDiv.innerHTML = `
+            <span style="font-size: 0.75rem; font-weight: 700; color: #2563eb; display: block; margin-bottom: 0.25rem;">Apex AI Assistant</span>
+            <div class="assistant-content" style="background: white; border: 1px solid #e2e8f0; padding: 0.75rem 1rem; border-radius: 12px 12px 12px 0; font-size: 0.88rem; color: #1e293b; line-height: 1.5;">
+                <span class="typing" style="color: #64748b;">Thinking...</span>
+            </div>
+        `;
+        chatHistory.appendChild(assistantDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
 
+        const contentElem = assistantDiv.querySelector('.assistant-content');
+        let fullText = '';
+        let citations = [];
+
         try {
-            const encodedQ = encodeURIComponent(question);
-            const response = await fetch(`/Applicant/ChatStream?question=${encodedQ}`);
+            const url = `/Applicant/ChatStream?question=${encodeURIComponent(question)}`;
+            const response = await fetch(url);
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let buffer = '';
+
+            contentElem.innerHTML = '';
 
             while (true) {
-                const { done, value } = await reader.read();
+                const { value, done } = await reader.read();
                 if (done) break;
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop(); // keep partial line
+                const text = decoder.decode(value);
+                const lines = text.split('\n');
 
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
-                        const dataStr = line.replace('data: ', '').trim();
-                        if (dataStr === '[DONE]') break;
+                        const jsonStr = line.replace('data: ', '').trim();
+                        if (jsonStr === '[DONE]') continue;
 
                         try {
-                            const parsed = JSON.parse(dataStr);
-                            if (parsed.chunk) {
-                                aiContentSpan.innerText += parsed.chunk;
-                                chatHistory.scrollTop = chatHistory.scrollHeight;
+                            const data = JSON.parse(jsonStr);
+                            if (data.chunk) {
+                                fullText += data.chunk;
+                                contentElem.innerText = fullText;
                             }
-                            if (parsed.isFinal && parsed.citations && parsed.citations.length > 0) {
-                                const citationDiv = document.createElement('div');
-                                citationDiv.style.marginTop = '0.5rem';
-                                citationDiv.style.padding = '0.5rem 0.75rem';
-                                citationDiv.style.background = '#f1f5f9';
-                                citationDiv.style.borderRadius = '6px';
-                                citationDiv.style.fontSize = '0.78rem';
-                                citationDiv.style.color = '#334155';
-                                citationDiv.innerHTML = `<strong>📜 Grounded Policy Citation:</strong> ${escapeHtml(parsed.citations[0].documentTitle)} (${escapeHtml(parsed.citations[0].section)})<br><em>"${escapeHtml(parsed.citations[0].excerpt)}"</em>`;
-                                aiDiv.appendChild(citationDiv);
-                                chatHistory.scrollTop = chatHistory.scrollHeight;
+                            if (data.citations) {
+                                citations = data.citations;
                             }
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                 }
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+
+            // Task 8: ChatGPT-style Citations strip beneath the answer
+            if (citations && citations.length > 0) {
+                const citeStrip = document.createElement('div');
+                citeStrip.style.marginTop = '0.75rem';
+                citeStrip.style.paddingTop = '0.5rem';
+                citeStrip.style.borderTop = '1px solid #f1f5f9';
+                citeStrip.style.fontSize = '0.75rem';
+                citeStrip.style.color = '#475569';
+
+                let citeHtml = '<strong style="display: block; margin-bottom: 0.35rem; color: #1e3a8a;">📚 Grounded Policy Sources:</strong>';
+                citations.forEach((c, idx) => {
+                    citeHtml += `<span style="display: inline-block; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.2rem 0.5rem; border-radius: 4px; margin-right: 0.4rem; margin-bottom: 0.3rem;">[${idx + 1}] ${escapeHtml(c.title || c.documentTitle || 'Policy')} (Sec. ${escapeHtml(c.section || 'N/A')})</span>`;
+                });
+                citeStrip.innerHTML = citeHtml;
+                contentElem.appendChild(citeStrip);
             }
         } catch (err) {
-            aiContentSpan.innerText += '\n[Network error during streaming]';
+            contentElem.innerHTML = `<span style="color: #dc2626;">Error communicating with AI assistant: ${escapeHtml(err.message)}</span>`;
         } finally {
-            btnSend.disabled = false;
-            btnSend.innerText = 'Ask AI';
+            btn.disabled = false;
         }
     }
 
@@ -492,4 +873,3 @@
         return div.innerHTML;
     }
 </script>
-}

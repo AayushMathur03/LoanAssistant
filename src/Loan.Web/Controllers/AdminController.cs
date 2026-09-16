@@ -11,11 +11,16 @@ public class AdminController : Controller
 {
     private readonly IConfiguration _configuration;
     private readonly ITelemetryCollector? _telemetryCollector;
+    private readonly Loan.Infrastructure.Search.PolicyIndexer? _policyIndexer;
 
-    public AdminController(IConfiguration? configuration = null, ITelemetryCollector? telemetryCollector = null)
+    public AdminController(
+        IConfiguration? configuration = null,
+        ITelemetryCollector? telemetryCollector = null,
+        Loan.Infrastructure.Search.PolicyIndexer? policyIndexer = null)
     {
         _configuration = configuration ?? new ConfigurationBuilder().Build();
         _telemetryCollector = telemetryCollector;
+        _policyIndexer = policyIndexer;
     }
 
     [HttpGet]
@@ -75,5 +80,79 @@ public class AdminController : Controller
         };
 
         return View(vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UploadPolicyDocument(
+        IFormFile? policyFile,
+        [FromForm] string? customTitle,
+        [FromForm] string? versionTag,
+        [FromForm] string? productId,
+        CancellationToken cancellationToken)
+    {
+        ViewData["ActiveNav"] = "Admin";
+        if (policyFile == null || policyFile.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Please select a Markdown (.md) or text policy document to upload.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            var fileName = Path.GetFileName(policyFile.FileName);
+            var version = string.IsNullOrWhiteSpace(versionTag) ? "v2.1" : versionTag.Trim();
+            var prodId = string.IsNullOrWhiteSpace(productId) ? "GENERAL" : productId.Trim();
+            var title = string.IsNullOrWhiteSpace(customTitle) ? Path.GetFileNameWithoutExtension(fileName) : customTitle.Trim();
+
+            using var reader = new StreamReader(policyFile.OpenReadStream());
+            var rawContent = await reader.ReadToEndAsync(cancellationToken);
+
+            string finalMarkdown;
+            if (!rawContent.TrimStart().StartsWith("---"))
+            {
+                finalMarkdown = $"---\r\n" +
+                                $"document_id: DOC-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}\r\n" +
+                                $"title: {title}\r\n" +
+                                $"product_id: {prodId}\r\n" +
+                                $"policy_version: {version}\r\n" +
+                                $"document_type: PolicyGuide\r\n" +
+                                $"audience: Underwriting\r\n" +
+                                $"effective_from: {DateTime.UtcNow:yyyy-MM-dd}\r\n" +
+                                $"effective_to: Active\r\n" +
+                                $"---\r\n\r\n" +
+                                rawContent;
+            }
+            else
+            {
+                finalMarkdown = rawContent;
+            }
+
+            // Save to SeedPolicies directory
+            var seedDir = Path.Combine(Directory.GetCurrentDirectory(), "src", "Loan.Infrastructure", "Search", "SeedPolicies");
+            if (!Directory.Exists(seedDir))
+            {
+                seedDir = Path.Combine(AppContext.BaseDirectory, "Search", "SeedPolicies");
+            }
+
+            if (Directory.Exists(seedDir))
+            {
+                var savePath = Path.Combine(seedDir, fileName);
+                await System.IO.File.WriteAllTextAsync(savePath, finalMarkdown, cancellationToken);
+            }
+
+            // Synchronize with Azure AI Search Index
+            if (_policyIndexer != null)
+            {
+                await _policyIndexer.SynchronizeIndexAndSeedAsync(seedDir, cancellationToken);
+            }
+
+            TempData["SuccessMessage"] = $"Policy document '{fileName}' (Version: {version}) successfully ingested and re-indexed into Azure AI Search ('loan-policies-index').";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Policy ingestion failed: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 }

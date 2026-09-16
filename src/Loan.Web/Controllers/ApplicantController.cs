@@ -52,10 +52,18 @@ public class ApplicantController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] string? tab = null, [FromQuery] string? applicationId = null)
     {
         ViewData["ActiveNav"] = "Applicant";
-        var vm = await BuildDashboardViewModelAsync();
+        var vm = await BuildDashboardViewModelAsync(applicationId);
+        if (!string.IsNullOrWhiteSpace(tab))
+        {
+            vm.ActiveTab = tab.Equals("applications", StringComparison.OrdinalIgnoreCase) ? "applications" : "catalogue";
+        }
+        else if (!string.IsNullOrWhiteSpace(applicationId))
+        {
+            vm.ActiveTab = "applications";
+        }
         return View(vm);
     }
 
@@ -67,9 +75,11 @@ public class ApplicantController : Controller
         var (currentUser, applicantId) = await GetCurrentApplicantInfoAsync();
         var appId = $"APP-{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
 
-        var productRules = input.ProductType.Equals("PersonalLoan", StringComparison.OrdinalIgnoreCase)
-            ? ProductRules.CreatePersonalLoan("v2.0")
-            : ProductRules.CreateStandardMortgage("v1.2");
+        var productRules = input.ProductType.Equals("AutoLoan", StringComparison.OrdinalIgnoreCase)
+            ? ProductRules.CreateAutoLoan("v1.1")
+            : input.ProductType.Equals("PersonalLoan", StringComparison.OrdinalIgnoreCase)
+                ? ProductRules.CreatePersonalLoan("v2.0")
+                : ProductRules.CreateStandardMortgage("v1.2");
 
         var facts = new ApplicantFacts(
             applicantId: applicantId,
@@ -104,8 +114,8 @@ public class ApplicantController : Controller
             await _userManager.UpdateAsync(currentUser);
         }
 
-        TempData["SuccessMessage"] = $"New {input.ProductType} application '{appId}' submitted successfully!";
-        return RedirectToAction(nameof(Index));
+        SetFlashMessage("SuccessMessage", $"New {productRules.ProductName} application '{appId}' submitted successfully!");
+        return RedirectToAction(nameof(Index), new { tab = "applications", applicationId = appId });
     }
 
     [HttpPost]
@@ -163,7 +173,7 @@ public class ApplicantController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> UploadDocument([FromForm] string applicationId, IFormFile document)
+    public async Task<IActionResult> UploadDocument([FromForm] string applicationId, IFormFile? document, [FromForm] string? sampleDocumentName)
     {
         ViewData["ActiveNav"] = "Applicant";
         var targetAppId = string.IsNullOrWhiteSpace(applicationId) ? "APP-2026-001" : applicationId;
@@ -173,24 +183,51 @@ public class ApplicantController : Controller
             return Forbid();
         }
 
+        Stream? stream = null;
+        string? uploadFileName = null;
+        string? uploadContentType = null;
+
         if (document != null && document.Length > 0)
+        {
+            stream = document.OpenReadStream();
+            uploadFileName = document.FileName;
+            uploadContentType = document.ContentType;
+        }
+        else if (!string.IsNullOrWhiteSpace(sampleDocumentName))
+        {
+            var samplePath = FindSampleDocumentPath(sampleDocumentName);
+            if (samplePath != null && System.IO.File.Exists(samplePath))
+            {
+                stream = System.IO.File.OpenRead(samplePath);
+                uploadFileName = Path.GetFileName(samplePath);
+                uploadContentType = "text/plain";
+            }
+        }
+
+        if (stream != null && uploadFileName != null)
         {
             try
             {
-                using var stream = document.OpenReadStream();
-                var command = new UploadAndExtractDocumentCommand(targetAppId, document.FileName, document.ContentType, stream);
-                var docRecord = await _uploadHandler.HandleAsync(command);
+                using (stream)
+                {
+                    var command = new UploadAndExtractDocumentCommand(targetAppId, uploadFileName, uploadContentType ?? "text/plain", stream);
+                    var docRecord = await _uploadHandler.HandleAsync(command);
 
-                // Re-evaluate eligibility after new document facts
-                await _evaluateEligibilityHandler.HandleAsync(new EvaluateEligibilityCommand(targetAppId));
+                    // Re-evaluate eligibility after new document facts
+                    await _evaluateEligibilityHandler.HandleAsync(new EvaluateEligibilityCommand(targetAppId));
 
-                SetFlashMessage("SuccessMessage", $"Document '{document.FileName}' successfully uploaded and stored in private container. {docRecord.Fields.Count} facts extracted.");
-                ViewBag.ExtractedRecord = docRecord;
+                    SetFlashMessage("SuccessMessage", $"Document '{uploadFileName}' successfully uploaded and stored in private container. {docRecord.Fields.Count} facts extracted.");
+                    ViewBag.ExtractedRecord = docRecord;
+                }
             }
             catch (Exception ex)
             {
                 SetFlashMessage("ErrorMessage", $"Document upload failed: {ex.Message}");
             }
+        }
+        else
+        {
+            SetFlashMessage("ErrorMessage", "Please select a file to upload or choose a synthetic demo document.");
         }
 
         return RedirectToAction(nameof(Index));
@@ -316,29 +353,37 @@ public class ApplicantController : Controller
         await Response.Body.FlushAsync(cancellationToken);
     }
 
-    private async Task<ApplicantDashboardViewModel> BuildDashboardViewModelAsync()
+    private async Task<ApplicantDashboardViewModel> BuildDashboardViewModelAsync(string? requestedAppId = null)
     {
         var (currentUser, applicantId) = await GetCurrentApplicantInfoAsync();
 
-        LoanApplication? activeApp = null;
-        if (currentUser?.LinkedApplicationId != null)
-        {
-            activeApp = await _applicationRepository.GetByIdAsync(currentUser.LinkedApplicationId);
-        }
-
         var allApps = (await _applicationRepository.GetByApplicantIdAsync(applicantId)).ToList();
-        if (activeApp == null && allApps.Any())
+        if (!allApps.Any())
         {
-            activeApp = allApps.First();
-        }
-        else if (activeApp == null)
-        {
-            activeApp = await _applicationRepository.GetByIdAsync("APP-2026-001");
-            if (activeApp != null && !allApps.Any(a => a.ApplicationId == activeApp.ApplicationId))
+            var defaultApp = await _applicationRepository.GetByIdAsync(currentUser?.LinkedApplicationId ?? "APP-2026-001");
+            if (defaultApp != null)
             {
-                allApps.Insert(0, activeApp);
+                allApps.Add(defaultApp);
             }
         }
+
+        LoanApplication? activeApp = null;
+        if (!string.IsNullOrWhiteSpace(requestedAppId))
+        {
+            activeApp = allApps.FirstOrDefault(a => a.ApplicationId.Equals(requestedAppId, StringComparison.OrdinalIgnoreCase))
+                ?? await _applicationRepository.GetByIdAsync(requestedAppId);
+            if (activeApp != null && !allApps.Any(a => a.ApplicationId == activeApp.ApplicationId))
+            {
+                allApps.Add(activeApp);
+            }
+        }
+
+        if (activeApp == null && currentUser?.LinkedApplicationId != null)
+        {
+            activeApp = allApps.FirstOrDefault(a => a.ApplicationId.Equals(currentUser.LinkedApplicationId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        activeApp ??= allApps.FirstOrDefault();
 
         return new ApplicantDashboardViewModel
         {
@@ -401,5 +446,25 @@ public class ApplicantController : Controller
             }
         }
         catch { }
+    }
+
+    private string? FindSampleDocumentPath(string fileName)
+    {
+        var sanitized = Path.GetFileName(fileName);
+        string[] candidateDirs = [
+            Path.Combine(Directory.GetCurrentDirectory(), "SampleDocuments"),
+            Path.Combine(Directory.GetCurrentDirectory(), "src", "Loan.Web", "SampleDocuments"),
+            Path.Combine(AppContext.BaseDirectory, "SampleDocuments"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SampleDocuments"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "Loan.Web", "SampleDocuments")
+        ];
+
+        foreach (var dir in candidateDirs)
+        {
+            var fullPath = Path.Combine(dir, sanitized);
+            if (System.IO.File.Exists(fullPath)) return fullPath;
+        }
+
+        return null;
     }
 }

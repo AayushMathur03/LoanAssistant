@@ -70,7 +70,9 @@ public class LoanApplication
 
     public void Submit(DateTime timestampUtc)
     {
-        if (Status != ApplicationStatus.Draft && Status != ApplicationStatus.InformationRequested)
+        if (Status != ApplicationStatus.Draft && 
+            Status != ApplicationStatus.InformationRequested && 
+            Status != ApplicationStatus.UnderDocumentReview)
         {
             throw new InvalidApplicationStateException($"Cannot submit application in '{Status}' state.");
         }
@@ -90,7 +92,9 @@ public class LoanApplication
     {
         ArgumentNullException.ThrowIfNull(recommendation);
         CurrentRecommendation = recommendation;
-        Status = ApplicationStatus.UnderOfficerReview;
+        Status = recommendation.DecisionRecommendation == RecommendationType.PendingInformation
+            ? ApplicationStatus.InformationRequested
+            : ApplicationStatus.UnderOfficerReview;
         UpdatedAtUtc = timestampUtc;
     }
 

@@ -110,6 +110,32 @@
                     <span style="font-size: 0.75rem; color: #64748b;">Section 8.1 TRID/RESPA 3-Business-Day Loan Estimate Delivery Rule</span>
                 </div>
             </div>
+
+            <!-- Dynamic Policy Upload & Vector Re-Indexing Form (Task 6) -->
+            <form asp-action="UploadPolicyDocument" method="post" enctype="multipart/form-data" style="margin-top: 1.25rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 1rem;">
+                @Html.AntiForgeryToken()
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <strong style="font-size: 0.85rem; color: #0f172a;">⚡ Ingest & Vectorize New Policy Document</strong>
+                    <span style="font-size: 0.72rem; color: #64748b;">HNSW Vector Embeddings</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <label style="font-size: 0.72rem; color: #475569; display: block; font-weight: 600;">Policy Title</label>
+                        <input type="text" name="customTitle" class="form-control" placeholder="e.g. Commercial Loan Policy" style="width: 100%; padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 0.72rem; color: #475569; display: block; font-weight: 600;">Version Tag</label>
+                        <input type="text" name="versionTag" class="form-control" placeholder="v2.1" value="v2.1" style="width: 100%; padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;" />
+                    </div>
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="font-size: 0.72rem; color: #475569; display: block; font-weight: 600;">Markdown Policy File (.md, .txt)</label>
+                    <input type="file" name="policyFile" accept=".md,.txt" style="font-size: 0.78rem; width: 100%;" required />
+                </div>
+                <button type="submit" class="btn" style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.45rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                    Upload & Re-Index Policy
+                </button>
+            </form>
         </div>
 
         <!-- Structured Telemetry & Measured Token Tracking -->

@@ -112,6 +112,21 @@ public class SqlLoanApplicationRepository : ILoanApplicationRepository
 
         return entities.Select(e => e.ToDomain(recs.TryGetValue(e.ApplicationId, out var recEntity) ? recEntity.ToDomain() : null));
     }
+
+    public async Task<IEnumerable<LoanApplication>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await _context.Applications
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var appIds = entities.Select(e => e.ApplicationId).ToList();
+        var recs = await _context.Recommendations
+            .AsNoTracking()
+            .Where(r => appIds.Contains(r.ApplicationId))
+            .ToDictionaryAsync(r => r.ApplicationId, cancellationToken);
+
+        return entities.Select(e => e.ToDomain(recs.TryGetValue(e.ApplicationId, out var recEntity) ? recEntity.ToDomain() : null));
+    }
 }
 
 public class SqlRecommendationRepository : IRecommendationRepository

@@ -58,8 +58,8 @@ public class RecommendationOrchestratorAgent
         compSw.Stop();
         _telemetryCollector?.RecordAgentStageLatency("ComplianceReview", compSw.Elapsed.TotalMilliseconds);
 
-        // 2. AUTHORITATIVE DETERMINISTIC OVERRIDES
-        // RoutingState and RiskScore are derived 100% deterministically from Domain EligibilityIndicators
+        // 2. AUTHORITATIVE DETERMINISTIC OVERRIDES & DOCUMENT GATING
+        // RoutingState and RiskScore are derived 100% deterministically from Domain EligibilityIndicators & Document Gating
         var deterministicStatus = application.Indicators.Status;
 
         string routingState = deterministicStatus switch
@@ -71,14 +71,22 @@ public class RecommendationOrchestratorAgent
             _ => "ManualReview"
         };
 
-        double riskScore = deterministicStatus switch
+        // If candidate documents have unconfirmed fields, gate progress and route to PendingInformation
+        if (docResult.UnresolvedFields.Count > 0)
         {
-            EligibilityStatus.Eligible => 0.15,
-            EligibilityStatus.PendingInformation => 0.50,
-            EligibilityStatus.ReferToHuman => 0.65,
-            EligibilityStatus.Ineligible => 0.85,
-            _ => 0.65
-        };
+            routingState = "PendingInformation";
+        }
+
+        double riskScore = (routingState == "PendingInformation" && deterministicStatus == EligibilityStatus.Eligible)
+            ? 0.50
+            : deterministicStatus switch
+            {
+                EligibilityStatus.Eligible => 0.15,
+                EligibilityStatus.PendingInformation => 0.50,
+                EligibilityStatus.ReferToHuman => 0.65,
+                EligibilityStatus.Ineligible => 0.85,
+                _ => 0.65
+            };
 
         // 3. Aggregate Unresolved Items & Policy Exceptions
         var unresolvedItems = new List<string>(docResult.UnresolvedFields);

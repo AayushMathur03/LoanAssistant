@@ -8,6 +8,7 @@ using Loan.Domain.Products;
 using Loan.Infrastructure;
 using Loan.Infrastructure.AzureOpenAI;
 using Loan.Infrastructure.Documents;
+using Loan.Infrastructure.Persistence;
 using Loan.Infrastructure.Persistence.DbContext;
 using Loan.Infrastructure.Search;
 using Loan.Infrastructure.Verification;
@@ -97,53 +98,8 @@ static async Task EnsureDatabaseAndSeedAsync(WebApplication app)
     // Seed Synthetic Demo Identity Users and Roles (Applicant, LoanOfficer, ComplianceReviewer, Administrator)
     await scope.ServiceProvider.SeedIdentityUsersAndRolesAsync();
 
-    var repo = scope.ServiceProvider.GetRequiredService<ILoanApplicationRepository>();
-
-    var existing1 = await repo.GetByIdAsync("APP-2026-001");
-    if (existing1 != null) return; // Already seeded in SQL Server
-
-    var evalHandler = scope.ServiceProvider.GetRequiredService<EvaluateEligibilityCommandHandler>();
-    var draftHandler = scope.ServiceProvider.GetRequiredService<GenerateRecommendationDraftCommandHandler>();
-
-    var rules = ProductRules.CreateStandardMortgage("v1.2");
-    
-    // Sample Application 1: Eligible mortgage application
-    var facts1 = new ApplicantFacts(
-        applicantId: "APP-100",
-        fullName: "Alice Cooper",
-        syntheticId: "SYN-888777",
-        monthlyGrossIncome: new Money(12000m),
-        monthlyDebts: new Money(3000m),
-        requestedLoanAmount: new Money(350000m),
-        estimatedPropertyValue: new Money(500000m),
-        creditScore: 750,
-        employmentStatus: "Full-Time Senior Engineer",
-        loanPurpose: "Primary Residence Purchase");
-
-    var app1 = new LoanApplication("APP-2026-001", "APP-100", rules, facts1, DateTime.UtcNow.AddHours(-12));
-    app1.Submit(DateTime.UtcNow.AddHours(-10));
-    await repo.AddAsync(app1);
-    await evalHandler.HandleAsync(new EvaluateEligibilityCommand("APP-2026-001"));
-    await draftHandler.HandleAsync(new GenerateRecommendationDraftCommand("APP-2026-001"));
-
-    // Sample Application 2: High DTI application requiring human officer review
-    var facts2 = new ApplicantFacts(
-        applicantId: "APP-101",
-        fullName: "Jane Smith",
-        syntheticId: "SYN-654321",
-        monthlyGrossIncome: new Money(10000m),
-        monthlyDebts: new Money(5200m), // High DTI (52% > 43% max)
-        requestedLoanAmount: new Money(400000m),
-        estimatedPropertyValue: new Money(600000m),
-        creditScore: 610,
-        employmentStatus: "Full-Time Marketing Lead",
-        loanPurpose: "Refinance");
-
-    var app2 = new LoanApplication("APP-2026-002", "APP-101", rules, facts2, DateTime.UtcNow.AddHours(-6));
-    app2.Submit(DateTime.UtcNow.AddHours(-5));
-    await repo.AddAsync(app2);
-    await evalHandler.HandleAsync(new EvaluateEligibilityCommand("APP-2026-002"));
-    await draftHandler.HandleAsync(new GenerateRecommendationDraftCommand("APP-2026-002"));
+    // Seed Comprehensive Multi-Stage Demo Applications (APP-2026-001 through APP-2026-004)
+    await DemoDataSeeder.SeedDemoApplicationsAsync(scope.ServiceProvider);
 }
 
 public partial class Program { }

@@ -76,4 +76,18 @@ public class ProductRules
         requiresIdentityVerification: true,
         requiresPropertyValuation: false
     );
+
+    public static ProductRules CreateAutoLoan(string version = "v1.1") => new(
+        productId: "LOAN-AUTO",
+        productName: "Vehicle Auto Loan",
+        effectiveVersion: version,
+        maxDtiRatio: 0.45m,
+        maxLtvRatio: 0.90m,
+        minCreditScore: 620,
+        minMonthlyIncome: new Money(2000m),
+        maxLoanAmount: new Money(60000m),
+        requiresIncomeVerification: true,
+        requiresIdentityVerification: true,
+        requiresPropertyValuation: true
+    );
 }

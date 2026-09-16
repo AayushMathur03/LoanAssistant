@@ -195,7 +195,7 @@ public class McpToolServer
         {
             "get_identity_status" => await HandleGetIdentityStatusAsync(args, cancellationToken),
             "get_income_verification" => await HandleGetIncomeVerificationAsync(args, cancellationToken),
-            "get_credit_score" => await HandleGetCreditScoreAsync(args, cancellationToken),
+            "get_credit_score" or "get_credit" => await HandleGetCreditScoreAsync(args, cancellationToken),
             "search_policy" => await HandleSearchPolicyAsync(args, cancellationToken),
             "save_draft" => await HandleSaveDraftAsync(args, actorId, actorRole, cancellationToken),
             _ => ErrorResult($"ToolNotFound: Tool '{toolName}' is not registered.")

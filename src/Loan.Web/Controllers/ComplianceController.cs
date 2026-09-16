@@ -29,12 +29,7 @@ public class ComplianceController : Controller
     {
         ViewData["ActiveNav"] = "Compliance";
 
-        var apps = (await _applicationRepository.GetByApplicantIdAsync("APP-100")).ToList();
-        var app2 = await _applicationRepository.GetByIdAsync("APP-2026-002");
-        if (app2 != null && !apps.Any(a => a.ApplicationId == app2.ApplicationId))
-        {
-            apps.Add(app2);
-        }
+        var apps = (await _applicationRepository.GetAllAsync()).ToList();
 
         var auditEvents = new List<AuditLogItem>();
         int exceptionsCount = 0;

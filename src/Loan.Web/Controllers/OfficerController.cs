@@ -44,15 +44,8 @@ public class OfficerController : Controller
         ViewData["ActiveNav"] = "Officer";
         
         // Query real applications from SQL repository
+        var allApps = (await _applicationRepository.GetAllAsync()).ToList();
         var pendingReview = (await _applicationRepository.GetPendingOfficerReviewAsync()).ToList();
-        var allApps = (await _applicationRepository.GetByApplicantIdAsync("APP-100")).ToList();
-        
-        // Also retrieve other seeded applications if available
-        var app2 = await _applicationRepository.GetByIdAsync("APP-2026-002");
-        if (app2 != null && !allApps.Any(a => a.ApplicationId == app2.ApplicationId))
-        {
-            allApps.Add(app2);
-        }
 
         // Combine unique list
         var combinedList = pendingReview.Concat(allApps).DistinctBy(a => a.ApplicationId).ToList();
@@ -60,7 +53,7 @@ public class OfficerController : Controller
         var vm = new OfficerDashboardViewModel
         {
             TotalApplications = combinedList.Count,
-            ReadyForReviewCount = combinedList.Count(a => a.Status is ApplicationStatus.UnderOfficerReview or ApplicationStatus.Submitted or ApplicationStatus.UnderVerification or ApplicationStatus.UnderDocumentReview),
+            ReadyForReviewCount = combinedList.Count(a => a.Status is ApplicationStatus.UnderOfficerReview or ApplicationStatus.Submitted),
             PendingInfoCount = combinedList.Count(a => a.Status == ApplicationStatus.InformationRequested),
             ApprovedCount = combinedList.Count(a => a.Status == ApplicationStatus.Approved),
             RejectedCount = combinedList.Count(a => a.Status == ApplicationStatus.Rejected),

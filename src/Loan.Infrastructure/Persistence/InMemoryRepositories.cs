@@ -40,6 +40,11 @@ public class InMemoryLoanApplicationRepository : ILoanApplicationRepository
         var results = _store.Values.Where(a => a.Status == ApplicationStatus.UnderOfficerReview || a.Status == ApplicationStatus.Submitted);
         return Task.FromResult<IEnumerable<LoanApplication>>(results.ToList());
     }
+
+    public Task<IEnumerable<LoanApplication>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IEnumerable<LoanApplication>>(_store.Values.ToList());
+    }
 }
 
 public class InMemoryRecommendationRepository : IRecommendationRepository

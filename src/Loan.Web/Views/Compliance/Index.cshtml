@@ -226,9 +226,16 @@
                             if (parsed.isFinal && parsed.citations && parsed.citations.length > 0) {
                                 const citeEl = document.createElement('div');
                                 citeEl.style.fontSize = '0.75rem';
-                                citeEl.style.color = '#64748b';
-                                citeEl.style.marginTop = '0.25rem';
-                                citeEl.innerHTML = `<em>Source: ${parsed.citations[0].documentTitle} (${parsed.citations[0].section})</em>`;
+                                citeEl.style.color = '#475569';
+                                citeEl.style.marginTop = '0.5rem';
+                                citeEl.style.paddingTop = '0.35rem';
+                                citeEl.style.borderTop = '1px solid #f1f5f9';
+
+                                let citeHtml = '<strong style="display: block; margin-bottom: 0.25rem; color: #1e3a8a;">📚 Grounded Policy Sources:</strong>';
+                                parsed.citations.forEach((c, idx) => {
+                                    citeHtml += `<span style="display: inline-block; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.15rem 0.45rem; border-radius: 4px; margin-right: 0.35rem; margin-bottom: 0.25rem;">[${idx + 1}] ${c.title || c.documentTitle || 'Policy'} (Sec. ${c.section || 'N/A'})</span>`;
+                                });
+                                citeEl.innerHTML = citeHtml;
                                 aiDiv.appendChild(citeEl);
                             }
                         } catch (e) {}

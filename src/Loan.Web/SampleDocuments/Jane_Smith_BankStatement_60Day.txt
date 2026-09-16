@@ -1,0 +1,32 @@
+================================================================================
+FIRST HORIZON FEDERAL BANK - OFFICIAL 60-DAY PERIODIC ACCOUNT STATEMENT
+================================================================================
+Account Holder:     Jane Smith
+Mailing Address:    1042 Oakridge Way, Seattle, WA 98101
+Account Number:     ************9942
+Statement Period:   2026-07-01 to 2026-08-31 (60 Days)
+
+ACCOUNT BALANCE SUMMARY:
+--------------------------------------------------------------------------------
+Account Type:                   Preferred Savings & Checking
+Beginning Balance (07/01/2026): $38,400.00
+Total Recurring Direct Deposits:+$7,000.00
+Total Withdrawals & Debits:     -$2,400.00
+Current Available Balance:      $43,000.00
+Average 60-Day Balance:         $41,200.00
+
+RECURRING DIRECT DEPOSITS (INCOME VERIFICATION):
+--------------------------------------------------------------------------------
+Date            Description                             Amount
+07/15/2026      PACIFIC DESIGN DIRECT DEPOSIT PAYROLL   $2,750.00
+08/01/2026      PACIFIC DESIGN DIRECT DEPOSIT PAYROLL   $2,750.00
+08/15/2026      PACIFIC DESIGN DIRECT DEPOSIT PAYROLL   $2,750.00
+09/01/2026      PACIFIC DESIGN DIRECT DEPOSIT PAYROLL   $2,750.00
+
+RESERVE QUALIFICATION METRICS:
+Verified Liquid Funds:                          $43,000.00
+Underwriting Asset Compliance:                   Satisfies Personal Loan Reserve Criteria
+================================================================================
+Document Classification: Form BS-201 (Synthetic Demonstration Statement)
+Integrity Verification Hash: SHA-256 Verified
+================================================================================

@@ -13,6 +13,7 @@ public class ApplicantDashboardViewModel : IReadOnlyList<LoanApplication>
     
     public LoanApplication? ActiveApplication { get; set; }
     public List<LoanApplication> AllApplications { get; set; } = new();
+    public string ActiveTab { get; set; } = "catalogue"; // "catalogue" or "applications"
 
     public IEnumerator<LoanApplication> GetEnumerator() => AllApplications.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => AllApplications.GetEnumerator();
@@ -70,8 +71,9 @@ public class ApplicantDashboardViewModel : IReadOnlyList<LoanApplication>
 
 public class CreateApplicationInputModel
 {
-    public string ProductType { get; set; } = "Mortgage"; // "Mortgage" or "PersonalLoan"
+    public string ProductType { get; set; } = "Mortgage"; // "Mortgage", "PersonalLoan", or "AutoLoan"
     public decimal RequestedAmount { get; set; } = 350000m;
+    public int TermMonths { get; set; } = 360;
     public decimal EstimatedPropertyValue { get; set; } = 500000m;
     public decimal MonthlyGrossIncome { get; set; } = 12000m;
     public decimal MonthlyDebts { get; set; } = 3000m;

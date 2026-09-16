@@ -1,0 +1,33 @@
+================================================================================
+APEX NATIONAL BANK - OFFICIAL 60-DAY PERIODIC ACCOUNT STATEMENT
+================================================================================
+Account Holder:     Alice Cooper
+Mailing Address:    742 Evergreen Terrace, Austin, TX 78704
+Account Number:     ************4421
+Statement Period:   2026-07-01 to 2026-08-31 (60 Days)
+
+ACCOUNT BALANCE SUMMARY:
+--------------------------------------------------------------------------------
+Account Type:                   Premier Interest Checking
+Beginning Balance (07/01/2026): $74,210.50
+Total Recurring Direct Deposits:+$14,300.00
+Total Withdrawals & Debits:     -$3,510.50
+Current Available Balance:      $85,000.00
+Average 60-Day Balance:         $82,450.00
+
+RECURRING DIRECT DEPOSITS (INCOME VERIFICATION):
+--------------------------------------------------------------------------------
+Date            Description                             Amount
+07/15/2026      TECHCORP GLOBAL DIRECT DEPOSIT PAYROLL   $3,575.00
+08/01/2026      TECHCORP GLOBAL DIRECT DEPOSIT PAYROLL   $3,575.00
+08/15/2026      TECHCORP GLOBAL DIRECT DEPOSIT PAYROLL   $3,575.00
+09/01/2026      TECHCORP GLOBAL DIRECT DEPOSIT PAYROLL   $3,575.00
+
+RESERVE QUALIFICATION METRICS:
+Verified Liquid Funds for Downpayment & Closing: $85,000.00
+Verified Minimum Reserve Months Equivalent:      14.2 Months
+Underwriting Asset Compliance:                   Satisfies Reserve Guidelines (Section 3.2)
+================================================================================
+Document Classification: Form BS-200 (Synthetic Demonstration Statement)
+Integrity Verification Hash: SHA-256 Verified
+================================================================================

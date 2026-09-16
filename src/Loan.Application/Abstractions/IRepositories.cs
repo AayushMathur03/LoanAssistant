@@ -10,6 +10,7 @@ public interface ILoanApplicationRepository
     Task UpdateAsync(LoanApplication application, CancellationToken cancellationToken = default);
     Task<IEnumerable<LoanApplication>> GetByApplicantIdAsync(string applicantId, CancellationToken cancellationToken = default);
     Task<IEnumerable<LoanApplication>> GetPendingOfficerReviewAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<LoanApplication>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<LoanApplication>>(Array.Empty<LoanApplication>());
 }
 
 public interface IRecommendationRepository

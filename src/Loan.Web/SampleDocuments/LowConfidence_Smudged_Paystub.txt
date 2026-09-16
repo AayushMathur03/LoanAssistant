@@ -1,0 +1,25 @@
+================================================================================
+APEX FINANCIAL SERVICES - SCAN COPY [LOW RESOLUTION / SMUDGED ARTIFACT]
+================================================================================
+[WARNING: Optical Character Recognition Scan Quality Score: 0.72 - Review Required]
+
+Employer:           Acme Logistics & Distribution LLC
+Employee:           Bob Brown
+SSN:                ***-**-4421
+
+PAY PERIOD DETAILS (PARTIALLY OBSCURED):
+Pay Period Ending:  2026-08-XX [UNREADABLE DIGIT]
+
+EARNINGS DETAILS:
+Regular Hours:      80.00
+Gross Pay:          $5,750.00 [ESTIMATED SCAN]
+Monthly Gross Income: $11,500.00 [BLURRED FIELD - CANDIDATE CONFIDENCE 72%]
+Net Pay:            $3,820.00
+
+NOTES:
+Scan submitted from mobile device camera with optical reflection.
+Automatic OCR Confidence below 85.0% threshold.
+System Flag: Must be confirmed or overridden by human borrower before underwriting submission.
+================================================================================
+Document Classification: Scan-LowConf-400 (Low-Confidence Synthetic Document)
+================================================================================

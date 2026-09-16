@@ -298,4 +298,110 @@ public class LocalProductVerificationTests
         await retrievedStream!.CopyToAsync(ms);
         Assert.That(ms.ToArray(), Is.EqualTo(content));
     }
+
+    [Test]
+    public async Task ApplicantController_Index_SupportsSubTabNavigationAndSpecificApplicationSelection()
+    {
+        var controller = new ApplicantController(_qnaHandler, _uploadHandler, _confirmHandler, _appRepo, _evalHandler);
+        var applicantUser = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Name, "applicant@apex.local"),
+            new Claim(ClaimTypes.Role, "Applicant"),
+            new Claim("LinkedApplicationId", "APP-2026-001")
+        }, "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = applicantUser }
+        };
+
+        // 1. Browse Catalogue Tab
+        var catalogResult = await controller.Index(tab: "catalogue");
+        Assert.That(catalogResult, Is.TypeOf<ViewResult>());
+        var catalogVm = ((ViewResult)catalogResult).Model as ApplicantDashboardViewModel;
+        Assert.That(catalogVm, Is.Not.Null);
+        Assert.That(catalogVm!.ActiveTab, Is.EqualTo("catalogue"));
+
+        // 2. My Applications Tab with specific applicationId
+        var appsResult = await controller.Index(tab: "applications", applicationId: "APP-2026-001");
+        Assert.That(appsResult, Is.TypeOf<ViewResult>());
+        var appsVm = ((ViewResult)appsResult).Model as ApplicantDashboardViewModel;
+        Assert.That(appsVm, Is.Not.Null);
+        Assert.That(appsVm!.ActiveTab, Is.EqualTo("applications"));
+        Assert.That(appsVm.ActiveApplication, Is.Not.Null);
+        Assert.That(appsVm.ActiveApplication!.ApplicationId, Is.EqualTo("APP-2026-001"));
+    }
+
+    [Test]
+    public async Task ApplicantController_CreateApplication_SuccessfullySubmitsCustomAutoLoan()
+    {
+        var controller = new ApplicantController(_qnaHandler, _uploadHandler, _confirmHandler, _appRepo, _evalHandler, _draftHandler);
+        var applicantUser = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Name, "applicant@apex.local"),
+            new Claim(ClaimTypes.Role, "Applicant"),
+            new Claim("LinkedApplicationId", "APP-2026-001")
+        }, "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = applicantUser }
+        };
+
+        var input = new CreateApplicationInputModel
+        {
+            ProductType = "AutoLoan",
+            RequestedAmount = 35000m,
+            EstimatedPropertyValue = 42000m,
+            TermMonths = 60,
+            MonthlyGrossIncome = 7000m,
+            MonthlyDebts = 1500m,
+            CreditScore = 700,
+            EmploymentStatus = "Full-Time",
+            LoanPurpose = "Certified Pre-Owned Sedan"
+        };
+
+        var result = await controller.CreateApplication(input);
+        Assert.That(result, Is.TypeOf<RedirectToActionResult>());
+        var redirect = (RedirectToActionResult)result;
+        Assert.That(redirect.ActionName, Is.EqualTo("Index"));
+        Assert.That(redirect.RouteValues!["tab"], Is.EqualTo("applications"));
+
+        var createdAppId = redirect.RouteValues["applicationId"]?.ToString();
+        Assert.That(createdAppId, Is.Not.Null.And.Not.Empty);
+
+        var savedApp = await _appRepo.GetByIdAsync(createdAppId!);
+        Assert.That(savedApp, Is.Not.Null);
+        Assert.That(savedApp!.ProductRules.ProductId, Is.EqualTo("LOAN-AUTO"));
+        Assert.That(savedApp.Facts.RequestedLoanAmount.Amount, Is.EqualTo(35000m));
+    }
+
+    [Test]
+    public async Task OfficerController_Index_QueriesAllApplicationsAndPopulatesCounts()
+    {
+        var chatModel = new SyntheticChatModel();
+        var docAgent = new Loan.Application.Agents.DocumentAnalysisAgent(chatModel);
+        var eligAgent = new Loan.Application.Agents.EligibilityAnalysisAgent(chatModel);
+        var compAgent = new Loan.Application.Agents.ComplianceReviewAgent(new SyntheticPolicyRetriever(), chatModel);
+        var saveDraft = new SaveRecommendationDraftCommandHandler(_appRepo, _recRepo);
+        var orchestrator = new Loan.Application.Agents.RecommendationOrchestratorAgent(docAgent, eligAgent, compAgent, saveDraft, chatModel);
+
+        var controller = new OfficerController(_appRepo, _draftHandler, _decisionHandler, orchestrator);
+        var officerUser = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Name, "officer@apex.local"),
+            new Claim(ClaimTypes.Role, "LoanOfficer")
+        }, "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = officerUser }
+        };
+
+        var result = await controller.Index();
+        Assert.That(result, Is.TypeOf<ViewResult>());
+        var vm = ((ViewResult)result).Model as OfficerDashboardViewModel;
+        Assert.That(vm, Is.Not.Null);
+        Assert.That(vm!.TotalApplications, Is.GreaterThanOrEqualTo(2));
+    }
 }
