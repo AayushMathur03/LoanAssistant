@@ -899,7 +899,7 @@
             </div>
 
             <!-- Right Column: Live Streaming AI Assistant (Task 8 Copilot Experience) -->
-            <div class="copilot-chat-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; min-height: 540px; height: 100%; overflow: hidden;">
+            <div class="copilot-chat-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; height: auto; overflow: hidden;">
                 <div class="copilot-chat-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.35rem; background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 0.5rem;">
                     <div class="copilot-chat-header-title" style="display: flex; align-items: center; gap: 0.6rem;">
                         <span class="copilot-live-dot" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);"></span>
@@ -931,10 +931,19 @@
                 <!-- Chat Input Area -->
                 <div class="copilot-input-area" style="padding: 0.85rem 1.25rem; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; gap: 0.65rem; align-items: center;">
                     <input type="text" id="streamQuestionInput" class="copilot-input-field" style="flex: 1; padding: 0.7rem 1rem; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 0.88rem; color: #0f172a; outline: none; background: #f8fafc;" placeholder="Ask policy question (e.g. 'What is the maximum LTV ratio?')" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendStreamQuestion();}" />
+                    <button type="button" id="btnApplicantMic" class="copilot-mic-btn" onclick="toggleApplicantSpeech()" title="Start voice input" aria-label="Start voice input" aria-pressed="false">
+                        <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
                     <button type="button" id="btnSendStream" class="copilot-send-btn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; border: none; border-radius: 10px; padding: 0.7rem 1.35rem; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25); white-space: nowrap;" onclick="sendStreamQuestion()">
                         <span>Ask AI</span> <span style="font-size: 1.05rem; line-height: 1;">&rarr;</span>
                     </button>
                 </div>
+                <div id="applicantSpeechStatus" class="copilot-speech-status" style="display: none;"></div>
             </div>
         </div>
 
@@ -1343,6 +1352,139 @@
         const input = document.getElementById('streamQuestionInput');
         input.value = text;
         sendStreamQuestion();
+    }
+
+    function toggleApplicantSpeech() {
+        if (typeof window.toggleCopilotSpeech === 'function') {
+            window.toggleCopilotSpeech('btnApplicantMic', 'streamQuestionInput', 'applicantSpeechStatus');
+        } else if (typeof toggleCopilotSpeech === 'function') {
+            toggleCopilotSpeech('btnApplicantMic', 'streamQuestionInput', 'applicantSpeechStatus');
+        }
+    }
+
+    // Universal Copilot Speech Handler Fallback
+    if (typeof window.toggleCopilotSpeech !== 'function') {
+        (function () {
+            var activeRec = null;
+            var activeBtn = null;
+            var activeIn = null;
+            var activeSt = null;
+            var baseTxt = '';
+
+            window.toggleCopilotSpeech = function (btnId, inputId, statusId) {
+                var btn = typeof btnId === 'string' ? document.getElementById(btnId) : btnId;
+                var input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+                var status = statusId ? (typeof statusId === 'string' ? document.getElementById(statusId) : statusId) : null;
+                if (!btn || !input) return;
+
+                if (activeRec && activeBtn === btn) {
+                    stopSpeech();
+                    return;
+                }
+                if (activeRec) {
+                    stopSpeech();
+                }
+
+                var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) {
+                    if (status) {
+                        status.textContent = "Voice speech-to-text is not supported in this browser. Please use Chrome, Edge, or Safari, or type your question.";
+                        status.className = 'copilot-speech-status error';
+                        status.style.display = 'flex';
+                        setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                    }
+                    return;
+                }
+
+                try {
+                    var rec = new SR();
+                    rec.continuous = true;
+                    rec.interimResults = true;
+                    rec.lang = 'en-US';
+
+                    activeRec = rec;
+                    activeBtn = btn;
+                    activeIn = input;
+                    activeSt = status;
+
+                    var cur = (input.value || '').trim();
+                    baseTxt = cur ? cur + ' ' : '';
+
+                    rec.onstart = function () {
+                        btn.classList.add('listening');
+                        btn.setAttribute('aria-pressed', 'true');
+                        if (status) {
+                            status.textContent = "Listening... Speak your prompt. Click the microphone again when done.";
+                            status.className = 'copilot-speech-status';
+                            status.style.display = 'flex';
+                        }
+                    };
+
+                    rec.onresult = function (ev) {
+                        var interim = '';
+                        var finalVal = '';
+                        for (var i = 0; i < ev.results.length; ++i) {
+                            if (ev.results[i].isFinal) {
+                                finalVal += ev.results[i][0].transcript.trim() + ' ';
+                            } else {
+                                interim += ev.results[i][0].transcript;
+                            }
+                        }
+                        input.value = (baseTxt + finalVal + interim).trim();
+                    };
+
+                    rec.onerror = function (ev) {
+                        var err = ev.error;
+                        stopSpeech();
+                        if (status && err !== 'aborted') {
+                            var msg = err === 'not-allowed' || err === 'permission-denied'
+                                ? "Microphone access was denied. Please allow microphone permissions in your browser address bar."
+                                : err === 'no-speech'
+                                ? "No speech detected. Tap the microphone to speak again."
+                                : err === 'network'
+                                ? "Speech service network error. Check your internet connection."
+                                : "Voice input: " + err;
+                            status.textContent = msg;
+                            status.className = 'copilot-speech-status' + (err === 'no-speech' ? '' : ' error');
+                            status.style.display = 'flex';
+                            setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                        }
+                    };
+
+                    rec.onend = function () {
+                        if (activeRec === rec) stopSpeech();
+                    };
+
+                    rec.start();
+                } catch (e) {
+                    stopSpeech();
+                    if (status) {
+                        status.textContent = "Unable to start speech recognition: " + (e.message || e);
+                        status.className = 'copilot-speech-status error';
+                        status.style.display = 'flex';
+                        setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                    }
+                }
+            };
+
+            function stopSpeech() {
+                if (activeRec) {
+                    try { activeRec.abort(); } catch (ex) { }
+                    activeRec = null;
+                }
+                if (activeBtn) {
+                    activeBtn.classList.remove('listening');
+                    activeBtn.setAttribute('aria-pressed', 'false');
+                    activeBtn = null;
+                }
+                if (activeSt && !activeSt.classList.contains('error')) {
+                    var s = activeSt;
+                    setTimeout(function () { if (!activeRec && s) s.style.display = 'none'; }, 2000);
+                }
+                activeIn = null;
+                activeSt = null;
+            }
+        })();
     }
 
     let copilotMsgCounter = 0;

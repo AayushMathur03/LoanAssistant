@@ -450,6 +450,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.75rem;
+    align-items: start;
 }
 
 /* Responsive Media Queries */
@@ -551,8 +552,7 @@ body {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
-    min-height: 520px;
-    height: 100%;
+    height: auto;
     overflow: hidden;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -892,4 +892,65 @@ body {
     cursor: not-allowed;
     transform: none;
 }
+
+.copilot-mic-btn {
+    background: #ffffff;
+    color: #475569;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.65rem 0.8rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.copilot-mic-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.copilot-mic-btn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.copilot-mic-btn.listening {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    animation: mic-pulse 1.5s infinite;
+}
+
+@keyframes mic-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.copilot-speech-status {
+    font-size: 0.75rem;
+    padding: 0.4rem 1.25rem;
+    background: #f8fafc;
+    border-top: 1px dashed #e2e8f0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.copilot-speech-status.error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-top-color: #fecaca;
+}
+
 

@@ -351,7 +351,7 @@
         </div>
 
         <!-- Officer Underwriting AI Assistant (Task 8 Copilot Experience) -->
-        <div class="copilot-chat-card" style="margin-top: 1.5rem; min-height: 420px;">
+        <div class="copilot-chat-card" style="margin-top: 1.5rem;">
             <div class="copilot-chat-header">
                 <div class="copilot-chat-header-title">
                     <span class="copilot-live-dot"></span>
@@ -381,10 +381,19 @@
 
             <div class="copilot-input-area">
                 <input type="text" id="officerQInput" class="copilot-input-field" placeholder="Ask underwriting policy question..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendOfficerQuestion();}" />
+                <button type="button" id="btnOfficerMic" class="copilot-mic-btn" onclick="toggleOfficerSpeech()" title="Start voice input" aria-label="Start voice input" aria-pressed="false">
+                    <svg class="mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
                 <button type="button" id="btnOfficerSend" class="copilot-send-btn" onclick="sendOfficerQuestion()">
                     Query <span>&rarr;</span>
                 </button>
             </div>
+            <div id="officerSpeechStatus" class="copilot-speech-status" style="display: none;"></div>
         </div>
     </div>
 </div>
@@ -432,6 +441,105 @@
             const input = document.getElementById('officerQInput');
             input.value = text;
             sendOfficerQuestion();
+        }
+
+        function toggleOfficerSpeech() {
+            if (typeof window.toggleCopilotSpeech === 'function') {
+                window.toggleCopilotSpeech('btnOfficerMic', 'officerQInput', 'officerSpeechStatus');
+            } else if (typeof toggleCopilotSpeech === 'function') {
+                toggleCopilotSpeech('btnOfficerMic', 'officerQInput', 'officerSpeechStatus');
+            }
+        }
+
+        if (typeof window.toggleCopilotSpeech !== 'function') {
+            (function () {
+                var activeRec = null, activeBtn = null, activeIn = null, activeSt = null, baseTxt = '';
+                window.toggleCopilotSpeech = function (btnId, inputId, statusId) {
+                    var btn = typeof btnId === 'string' ? document.getElementById(btnId) : btnId;
+                    var input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+                    var status = statusId ? (typeof statusId === 'string' ? document.getElementById(statusId) : statusId) : null;
+                    if (!btn || !input) return;
+
+                    if (activeRec && activeBtn === btn) { stop(); return; }
+                    if (activeRec) { stop(); }
+
+                    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (!SR) {
+                        if (status) {
+                            status.textContent = "Voice speech-to-text is not supported in this browser. Please use Chrome, Edge, or Safari, or type your question.";
+                            status.className = 'copilot-speech-status error';
+                            status.style.display = 'flex';
+                            setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                        }
+                        return;
+                    }
+
+                    try {
+                        var rec = new SR();
+                        rec.continuous = true;
+                        rec.interimResults = true;
+                        rec.lang = 'en-US';
+                        activeRec = rec; activeBtn = btn; activeIn = input; activeSt = status;
+                        baseTxt = (input.value || '').trim() ? (input.value || '').trim() + ' ' : '';
+
+                        rec.onstart = function () {
+                            btn.classList.add('listening');
+                            btn.setAttribute('aria-pressed', 'true');
+                            if (status) {
+                                status.textContent = "Listening... Speak your prompt. Click the microphone again when done.";
+                                status.className = 'copilot-speech-status';
+                                status.style.display = 'flex';
+                            }
+                        };
+
+                        rec.onresult = function (ev) {
+                            var interim = '', finalVal = '';
+                            for (var i = 0; i < ev.results.length; ++i) {
+                                if (ev.results[i].isFinal) finalVal += ev.results[i][0].transcript.trim() + ' ';
+                                else interim += ev.results[i][0].transcript;
+                            }
+                            input.value = (baseTxt + finalVal + interim).trim();
+                        };
+
+                        rec.onerror = function (ev) {
+                            var err = ev.error;
+                            stop();
+                            if (status && err !== 'aborted') {
+                                var msg = err === 'not-allowed' || err === 'permission-denied'
+                                    ? "Microphone access was denied. Please allow microphone permissions in your browser address bar."
+                                    : err === 'no-speech' ? "No speech detected. Tap the microphone to speak again."
+                                    : err === 'network' ? "Speech service network error. Check your internet connection."
+                                    : "Voice input: " + err;
+                                status.textContent = msg;
+                                status.className = 'copilot-speech-status' + (err === 'no-speech' ? '' : ' error');
+                                status.style.display = 'flex';
+                                setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                            }
+                        };
+
+                        rec.onend = function () { if (activeRec === rec) stop(); };
+                        rec.start();
+                    } catch (e) {
+                        stop();
+                        if (status) {
+                            status.textContent = "Unable to start speech recognition: " + (e.message || e);
+                            status.className = 'copilot-speech-status error';
+                            status.style.display = 'flex';
+                            setTimeout(function () { if (status) status.style.display = 'none'; }, 6000);
+                        }
+                    }
+                };
+
+                function stop() {
+                    if (activeRec) { try { activeRec.abort(); } catch (e) { } activeRec = null; }
+                    if (activeBtn) { activeBtn.classList.remove('listening'); activeBtn.setAttribute('aria-pressed', 'false'); activeBtn = null; }
+                    if (activeSt && !activeSt.classList.contains('error')) {
+                        var s = activeSt;
+                        setTimeout(function () { if (!activeRec && s) s.style.display = 'none'; }, 2000);
+                    }
+                    activeIn = null; activeSt = null;
+                }
+            })();
         }
 
         let officerMsgCounter = 0;

@@ -100,25 +100,25 @@
 
         <!-- Right: Manual Email & Password Form -->
         <div class="card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-            <h2 style="font-size: 1.15rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Credential Login</h2>
+            <h2 style="font-size: 1.15rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Manual Demonstration Login</h2>
             <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">
                 Standard ASP.NET Core Identity authentication with SQL Server PBKDF2 password hashing:
             </p>
 
-            <form asp-action="Login" method="post">
+            <form asp-action="Login" method="post" id="manualLoginForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="ReturnUrl" />
 
                 <div asp-validation-summary="ModelOnly" style="color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem;"></div>
 
                 <div style="margin-bottom: 1rem;">
-                    <label asp-for="Email" style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem;">Email Address</label>
-                    <input asp-for="Email" type="email" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="e.g. officer@apex.local" required />
+                    <label asp-for="Email" style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem;">Username or Email Address</label>
+                    <input asp-for="Email" id="loginUsername" type="text" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="e.g. officer@apex.local or officer" required autocomplete="username" />
                 </div>
 
                 <div style="margin-bottom: 1.25rem;">
                     <label asp-for="Password" style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 0.35rem;">Password</label>
-                    <input asp-for="Password" type="password" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required />
+                    <input asp-for="Password" id="loginPassword" type="password" class="form-control" style="width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required autocomplete="current-password" />
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
@@ -128,7 +128,7 @@
                     <span style="font-size: 0.75rem; color: #94a3b8;">Default: 8-Hour Session</span>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-weight: 600; font-size: 0.95rem; border-radius: 6px; background: #2563eb; color: white; border: none; cursor: pointer;">
+                <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-weight: 600; font-size: 0.95rem; border-radius: 6px; background: #2563eb; color: white; border: none; cursor: pointer;">
                     Sign In to Portal
                 </button>
             </form>

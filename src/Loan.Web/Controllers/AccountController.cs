@@ -42,20 +42,36 @@ public class AccountController : Controller
     {
         ViewData["ReturnUrl"] = model.ReturnUrl;
 
-        if (!ModelState.IsValid)
+        if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
         {
+            ModelState.AddModelError(string.Empty, "Username/Email and Password are required.");
             return View(model);
         }
 
+        var normalizedInput = model.Email.Trim();
+
+        // Support lookup by email or username, and accept username prefix (e.g. "officer" -> "officer@apex.local")
+        var user = await _userManager.FindByEmailAsync(normalizedInput)
+                   ?? await _userManager.FindByNameAsync(normalizedInput);
+
+        if (user == null && !normalizedInput.Contains('@'))
+        {
+            var emailWithDomain = $"{normalizedInput}@apex.local";
+            user = await _userManager.FindByEmailAsync(emailWithDomain)
+                   ?? await _userManager.FindByNameAsync(emailWithDomain);
+        }
+
+        var userNameToSignIn = user?.UserName ?? normalizedInput;
+
         var result = await _signInManager.PasswordSignInAsync(
-            model.Email,
+            userNameToSignIn,
             model.Password,
             model.RememberMe,
             lockoutOnFailure: false);
 
         if (result.Succeeded)
         {
-            _logger.LogInformation("User {Email} logged in successfully.", model.Email);
+            _logger.LogInformation("User {UserName} ({Email}) logged in successfully.", userNameToSignIn, user?.Email ?? normalizedInput);
             if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             {
                 return Redirect(model.ReturnUrl);
@@ -63,7 +79,7 @@ public class AccountController : Controller
             return RedirectToDefaultForRole();
         }
 
-        ModelState.AddModelError(string.Empty, "Invalid login credentials. Please verify your email and password.");
+        ModelState.AddModelError(string.Empty, "Invalid login credentials. Please verify your username/email and password.");
         return View(model);
     }
 
